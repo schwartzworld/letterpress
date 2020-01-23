@@ -66,6 +66,14 @@
       bottom: 0;
       right: 0;
     }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+    }
+
     a {
       color: inherit;
     }
@@ -80,11 +88,15 @@
         <p>Press any letter or number to see it on screen</p>
         <p>The little buttton on top changes the font</p>
         <p>The big buttton on the bottom toggles uppercase and lowercase</p>
+        <p>Press <code>~</code> to see options</p>
         <button class='btn' onClick='enterFullScreen()'>FULL SCREEN</button>
       </div>
     </div>
     <div id='attribution'>
       Copyright © 2020 <a href="https://schwartz.world">Ian Schwartz</a>
+    </div>
+    <div className='modal' id='options'>
+      
     </div>
   </main>
   <button id='caseBtn' class='fixedBtn' onClick='toggleCase()'>BIG</button>
@@ -139,6 +151,7 @@
     // global state
     let casing = 0;
     let activeFontIndex = 0;
+    let flashingColors = true;
 
     const activeFont = () => fonts[activeFontIndex % fonts.length];
 
@@ -182,7 +195,7 @@
       return color;
     }
 
-    const setColors = () => {
+    const _setColors = () => {
       const color1 = randomColor();
       const color2 = randomColor();
       main.style.background = color1;
@@ -191,13 +204,41 @@
       caseBtn.style.color = color1;
     }
 
+    const setColors = () => {
+      if (flashingColors){
+        setTimeout(_setColors, 50);
+        setTimeout(_setColors, 100);
+        setTimeout(_setColors, 150);
+        setTimeout(_setColors, 200);
+        
+      } else {
+        _setColors();
+      }
+    }
+
+    const toggleFlashing = () => {
+      flashingColors = !flashingColors;
+    }
+
+    const showOptions = () => {
+      display.innerHTML = `
+        <div class="modal">
+          <button class='btn' onClick="toggleFlashing()">
+            Toggle Flashing Colors
+          </button>
+        </div>
+      `
+    }
+
     // Here's where the magic happens
     const showKey = (e) => {
-      setColors();
-      if (isAlphaNumeric(e.keyCode)) {
+      if (e.keyCode === 192) {
+        showOptions();
+      } else if (isAlphaNumeric(e.keyCode)) {
         const key = isUpperCase() ? e.key.toUpperCase() : e.key.toLowerCase();
         display.innerHTML = key;
       }
+      setColors(10);
     }
     document.addEventListener('keydown', showKey);
   </script>
