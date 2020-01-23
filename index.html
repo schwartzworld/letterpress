@@ -28,6 +28,7 @@
       position: fixed;
       z-index: 5;
       border: none;
+      cursor: pointer;
     }
 
     #caseBtn {
@@ -43,10 +44,16 @@
     #fontBtn {
       top: 0;
       right: 0;
-      z-index: 5;
       background: #000;
       color: pink;
+    }
+
+    .btn {
+      padding: 20px;
       border: none;
+      background: #000;
+      color: pink;
+      cursor: pointer;
     }
 
     #instructions {
@@ -73,6 +80,7 @@
         <p>Press any letter or number to see it on screen</p>
         <p>The little buttton on top changes the font</p>
         <p>The big buttton on the bottom toggles uppercase and lowercase</p>
+        <button class='btn' onClick='enterFullScreen()'>FULL SCREEN</button>
       </div>
     </div>
     <div id='attribution'>
@@ -83,12 +91,12 @@
   <button id='fontBtn' class='fixedBtn' onClick='toggleFont()'>Love Ya Like A Sister</button>
 
   <script>
+    // constants
     const display = document.querySelector('#display');
     const main = document.querySelector('main');
     const caseBtn = document.querySelector('#caseBtn');
     const fontBtn = document.querySelector('#fontBtn');
     const instructions = document.querySelector('#instructions');
-
     const fonts = [
       {
         name: 'Love Ya Like A Sister',
@@ -124,12 +132,15 @@
       },
     ]
 
-    let casing = 0;
-    let activeFontIndex = 0;
-    const activeFont = () => fonts[activeFontIndex % fonts.length];
-
+    // utilities
     const isUpperCase = () => casing % 2 === 0;
     const isAlphaNumeric = keyCode => keyCode <= 90 && keyCode >= 48;
+
+    // global state
+    let casing = 0;
+    let activeFontIndex = 0;
+
+    const activeFont = () => fonts[activeFontIndex % fonts.length];
 
     const toggleFont = () => {
       activeFontIndex += 1;
@@ -147,6 +158,16 @@
       display.innerHTML = isUpperCase() ? activeLetter.toUpperCase() : activeLetter.toLowerCase();
     }
 
+    const enterFullScreen = () => {
+      if (main.requestFullscreen) {
+        main.requestFullscreen();
+      }
+    }
+
+    /*
+      TODO: I'd like to eventually swap this functionality out for one
+      that guarantees accessible color combinations
+    */
     const randomColor = () => {
       const letters = "0123456789ABCDEF"; 
       
@@ -170,20 +191,15 @@
       caseBtn.style.color = color1;
     }
 
+    // Here's where the magic happens
     const showKey = (e) => {
+      setColors();
       if (isAlphaNumeric(e.keyCode)) {
         const key = isUpperCase() ? e.key.toUpperCase() : e.key.toLowerCase();
         display.innerHTML = key;
       }
     }
-
-    const game = (e) => {
-      setColors();
-      showKey(e);
-    }
-
-    document.addEventListener('keydown', game);
-
+    document.addEventListener('keydown', showKey);
   </script>
 </body>
 </html>
