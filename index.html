@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
 
-  <title>Letters Game</title>
+  <title>LetterPress</title>
   <link href="https://fonts.googleapis.com/css?family=Love+Ya+Like+A+Sister|Londrina+Shadow|Chewy|Bowlby+One+SC|Modak|Boogaloo|Bowly+One+SC|Fredericka+the+Great|Special+Elite&display=swap" rel="stylesheet">
 
 
@@ -53,6 +53,15 @@
       text-align: center;
       font-size: 20px;
     }
+    #attribution {
+      font-size: 10px;
+      position: fixed;
+      bottom: 0;
+      right: 0;
+    }
+    a {
+      color: inherit;
+    }
   </style>
 </head>
 
@@ -66,6 +75,9 @@
         <p>The big buttton on the bottom toggles uppercase and lowercase</p>
       </div>
     </div>
+    <div id='attribution'>
+      Copyright © 2020 <a href="https://schwartz.world">Ian Schwartz</a>
+    </div>
   </main>
   <button id='caseBtn' class='fixedBtn' onClick='toggleCase()'>BIG</button>
   <button id='fontBtn' class='fixedBtn' onClick='toggleFont()'>Love Ya Like A Sister</button>
@@ -75,6 +87,7 @@
     const main = document.querySelector('main');
     const caseBtn = document.querySelector('#caseBtn');
     const fontBtn = document.querySelector('#fontBtn');
+    const instructions = document.querySelector('#instructions');
 
     const fonts = [
       {
@@ -127,8 +140,11 @@
     }
 
     const toggleCase = () => {
+      instructions.style.display = 'none';
       casing += 1;
       caseBtn.innerHTML = isUpperCase() ? 'BIG' : 'small';
+      const activeLetter = display.innerHTML;
+      display.innerHTML = isUpperCase() ? activeLetter.toUpperCase() : activeLetter.toLowerCase();
     }
 
     const randomColor = () => {
