@@ -4,243 +4,27 @@
 <head>
   <meta charset="utf-8">
 
-  <title>LetterPress</title>
-  <link href="https://fonts.googleapis.com/css?family=Love+Ya+Like+A+Sister|Londrina+Shadow|Chewy|Bowlby+One+SC|Modak|Boogaloo|Bowly+One+SC|Fredericka+the+Great|Special+Elite&display=swap" rel="stylesheet">
-
-
+  <title>Console snek</title>
+  <meta name="description" content="The HTML5 Herald">
   <style type="text/css">
-    main {
-      height: 100vh;
-      width: 100vw;
-      background: pink;
-      position: fixed;
-      left: 0;
-      top: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 40vw;
-      z-index: 4;
-      font-family: 'Love Ya Like A Sister', cursive;
-    }
-
-    .fixedBtn {
-      position: fixed;
-      z-index: 5;
-      border: none;
-      cursor: pointer;
-    }
-
-    #caseBtn {
-      bottom: 0;
-      left: 0;
-      width: 200px;
-      height: 75px;
-      font-size: 30px;
-      background: #000;
-      color: pink;
-    }
-
-    #fontBtn {
-      top: 0;
-      right: 0;
-      background: #000;
-      color: pink;
-    }
-
-    .btn {
-      padding: 20px;
-      border: none;
-      background: #000;
-      color: pink;
-      cursor: pointer;
-    }
-
-    #instructions {
-      text-align: center;
-      font-size: 20px;
-    }
-    #attribution {
-      font-size: 10px;
-      position: fixed;
-      bottom: 0;
-      right: 0;
-    }
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
-      width: 100vw;
-    }
-
-    a {
-      color: inherit;
-    }
+    
   </style>
 </head>
 
 <body>
-  <main>
-    <div id='display'>
-      <div id='instructions'>
-        <h1>Welcome to LetterPress, a game for kids.</h1>
-        <p>Press any letter or number to see it on screen</p>
-        <p>The little buttton on top changes the font</p>
-        <p>The big buttton on the bottom toggles uppercase and lowercase</p>
-        <p>Press <code>~</code> to see options</p>
-        <button class='btn' onClick='enterFullScreen()'>FULL SCREEN</button>
-      </div>
-    </div>
-    <div id='attribution'>
-      Copyright © 2020 <a href="https://schwartz.world">Ian Schwartz</a>
-    </div>
-    <div className='modal' id='options'>
-      
-    </div>
-  </main>
-  <button id='caseBtn' class='fixedBtn' onClick='toggleCase()'>BIG</button>
-  <button id='fontBtn' class='fixedBtn' onClick='toggleFont()'>Love Ya Like A Sister</button>
+  <h1>LetterPress</h1>
+  <h2>Free, single file browser games</h2>
 
-  <script>
-    // constants
-    const display = document.querySelector('#display');
-    const main = document.querySelector('main');
-    const caseBtn = document.querySelector('#caseBtn');
-    const fontBtn = document.querySelector('#fontBtn');
-    const instructions = document.querySelector('#instructions');
-    const fonts = [
-      {
-        name: 'Love Ya Like A Sister',
-        family: "'Love Ya Like A Sister', cursive"
-      },
-      {
-        name: 'Londrina Shadow',
-        family: "'Londrina Shadow', cursive"
-      },
-      {
-        name: 'Chewy',
-        family: "'Chewy', cursive"
-      },
-      {
-        name: 'Modak',
-        family: "'Modak', cursive"
-      },
-      {
-        name: 'Boogaloo',
-        family: "'Boogaloo', cursive"
-      },
-      {
-        name: 'Special Elite',
-        family: "'Special Elite', cursive"
-      },
-      {
-        name: 'Fredericka the Great',
-        family: "'Fredericka the Great', cursive"
-      },
-      {
-        name: 'Bowlby One SC',
-        family: "'Bowlby One SC', cursive"
-      },
-    ]
+  <nav>
+    <ul>
+      <li>
+        <a href="/letterpress">LetterPress</a> - Press letters to see them on screen
+      </li>
+      <li>
+        <a href="/snek">SNEK</a> - A snake game with toggleable theming
+      </li>
+    </ul>
+  </nav> 
 
-    // utilities
-    const isUpperCase = () => casing % 2 === 0;
-    const isAlphaNumeric = keyCode => keyCode <= 90 && keyCode >= 48;
-
-    // global state
-    let casing = 0;
-    let activeFontIndex = 0;
-    let flashingColors = true;
-
-    const activeFont = () => fonts[activeFontIndex % fonts.length];
-
-    const toggleFont = () => {
-      activeFontIndex += 1;
-      const {name, family} = activeFont();
-      fontBtn.innerHTML = name;
-      main.style.fontFamily = family;
-      setColors();
-    }
-
-    const toggleCase = () => {
-      instructions.style.display = 'none';
-      casing += 1;
-      caseBtn.innerHTML = isUpperCase() ? 'BIG' : 'small';
-      const activeLetter = display.innerHTML;
-      display.innerHTML = isUpperCase() ? activeLetter.toUpperCase() : activeLetter.toLowerCase();
-    }
-
-    const enterFullScreen = () => {
-      if (main.requestFullscreen) {
-        main.requestFullscreen();
-      }
-    }
-
-    /*
-      TODO: I'd like to eventually swap this functionality out for one
-      that guarantees accessible color combinations
-    */
-    const randomColor = () => {
-      const letters = "0123456789ABCDEF"; 
-      
-      // html color code starts with # 
-      let color = '#'; 
-
-      // generating 6 times as HTML color code consist 
-      // of 6 letter or digits 
-      for (var i = 0; i < 6; i++) {
-         color += letters[(Math.floor(Math.random() * 16))]; 
-      }
-      return color;
-    }
-
-    const _setColors = () => {
-      const color1 = randomColor();
-      const color2 = randomColor();
-      main.style.background = color1;
-      main.style.color = color2;
-      fontBtn.style.color = color1;
-      caseBtn.style.color = color1;
-    }
-
-    const setColors = () => {
-      if (flashingColors){
-        setTimeout(_setColors, 50);
-        setTimeout(_setColors, 100);
-        setTimeout(_setColors, 150);
-        setTimeout(_setColors, 200);
-        
-      } else {
-        _setColors();
-      }
-    }
-
-    const toggleFlashing = () => {
-      flashingColors = !flashingColors;
-    }
-
-    const showOptions = () => {
-      display.innerHTML = `
-        <div class="modal">
-          <button class='btn' onClick="toggleFlashing()">
-            Toggle Flashing Colors
-          </button>
-        </div>
-      `
-    }
-
-    // Here's where the magic happens
-    const showKey = (e) => {
-      if (e.keyCode === 192) {
-        showOptions();
-      } else if (isAlphaNumeric(e.keyCode)) {
-        const key = isUpperCase() ? e.key.toUpperCase() : e.key.toLowerCase();
-        display.innerHTML = key;
-      }
-      setColors(10);
-    }
-    document.addEventListener('keydown', showKey);
-  </script>
 </body>
 </html>

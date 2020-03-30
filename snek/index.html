@@ -1,0 +1,282 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Console snek</title>
+  <meta name="description" content="The HTML5 Herald">
+  <style type="text/css">
+    body {
+      font-family: 'Courier New';
+      font-size: 25px;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+    #wrapper {
+      position: fixed;
+      height: calc(100% - 20px);
+      width: calc(100% - 20px);
+      top: 0;
+      left: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 10px solid black;
+
+    }
+    #wrapper::after {
+      content: "snek";
+      background-image: url("grass.jpeg");
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      position: absolute;
+      z-index: -1;
+    }
+
+    .cell {
+      height: 24px;
+      width: 24px;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 5;
+      border: 0.25px solid rgba(255,255,255,0.2);
+    }
+    .row {
+      display: flex;
+    }
+
+    #scoreh2 {
+      position: fixed;
+      bottom: 0;
+      right: 2rem;
+      z-index: 2;
+    }
+
+    #logo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 2;
+    }
+  </style>
+</head>
+
+<body>
+  <h2 id='scoreh2'>score: <span id="score">0</span></h2>
+  <div id='wrapper'>
+    <div id='game'></div>
+  </div>
+  <script>
+    let snakeDirection;
+    const notes = [261.63, 293.66, 311.13, 349.23, 369.99, ]
+    Object.defineProperty(window, 'w', {
+      get: function() {
+        if (snakeDirection !== 'down') snakeDirection = 'up';
+      }
+    });
+    Object.defineProperty(window, 'a', {
+      get: function() {
+        if (snakeDirection !== 'right') snakeDirection = 'left';
+      }
+    });
+    Object.defineProperty(window, 's', {
+      get: function() {
+        if (snakeDirection !== 'up') snakeDirection = 'down';
+      }
+    });
+    Object.defineProperty(window, 'd', {
+      get: function() {
+        if (snakeDirection !== 'left') snakeDirection = 'right';
+      }
+    });
+
+    class Apple {
+      constructor({height, width}) {
+        this.x = Math.floor(Math.random() * height);
+        this.y = Math.floor(Math.random() * width);
+        this.key = `${this.x},${this.y}`;
+      }
+
+      static icons = ['🌺', '🌻', '🌼', '🌸', '🌹'];
+      // static icons = ['↾', '⦻', '⇞', '🍺', '👣'];
+
+      value = Math.floor(Math.random() * Apple.icons.length);
+      show = Apple.icons[this.value];
+      isApple = true;
+    }
+
+  	class Board {
+  		constructor(h = 5, w = 7) {
+  			this.board = new Array(h).fill(new Array(w).fill([]));
+        this.apples = new Map();
+  		}
+
+  		calculate = (snake) => {
+  			const snek = snake.history.slice(0, snake.length);
+  			const board = this.board.map((rows, ri) => rows.map((square, si) => {
+          const key = `${ri},${si}`;
+          const apple = this.apples.get(key);
+          if (apple) return apple.show;
+          return square.length ? 'f' : ''
+        }));
+
+  			for (const segment of snek) {
+  				const [r, c] = segment;
+  				if (r < 0 || r > board.length) throw new Error('out of bounds r');
+  				if (c < 0 || c > board[0].length) throw new Error('out of bounds c');
+          const key = `${r},${c}`;
+          const apple = this.apples.get(key);
+  				if (apple) {
+            snake.eat(apple);
+            this.apples.delete(key);
+          } else if (board[r][c] === '') {
+  					board[r][c] = '🐝';
+            // board[r][c] = '🏃';
+  				} else {
+  					throw new Error('game over');
+  				}
+  			}
+  			return board;
+  		}
+
+  		draw = (snake) => {
+  			const game = document.querySelector('#game')
+  			const board = this.calculate(snake);
+  			const representation = board.map((row, ri) => {
+  				const r = row.map((sq, i) => {
+            const contents = sq || ' ';
+            return `<div class='cell'>${sq}</div>`}
+          ).join('');
+  				return `<div class='row'>${r}</div>`
+  			}).join('');
+  			game.innerHTML = representation;
+
+        const score = document.querySelector('#score');
+        score.innerHTML = snake.score;
+  		}
+
+      spawnApple = (height, width) => {
+        const apple = new Apple({ height, width });
+        this.apples.set(apple.key, apple);
+      }
+  	}
+
+  	class Snake {
+  		constructor(history = []) {
+  			if (history.length < 1) {
+  				this.history = [[0, 0]];
+  			} else {
+  				this.history = history;
+  			}
+  		}
+
+  		length = 5;
+      score = 0;
+
+  		nextSquare = (direction) => {
+  			const directions = {
+  				right: [this.history[0][0], this.history[0][1] + 1],
+  				left: [this.history[0][0], this.history[0][1] - 1],
+  				up: [this.history[0][0] - 1, this.history[0][1]],
+  				down: [this.history[0][0] + 1, this.history[0][1]]
+  			}
+  			const history = [directions[direction], ...this.history];
+  			this.history = history;
+  		}
+  		// 'up', 'down', 'left', 'right'
+  		move = (direction) => {
+  			this.history.unshift(this.nextSquare(direction));
+        this.score += 3 * this.length
+  		}
+      eat = (apple) => {
+        beep(10, notes[apple.value], 70);
+        this.length += apple.value;
+        this.score += 100 * apple.value;
+      }
+  	}  	
+
+    const getBoardSize = () => {
+      const height = Math.floor(document.body.clientHeight / 25);
+      const width = Math.floor(document.body.clientWidth / 25);
+      return { height, width }
+    }
+
+  	const play = () => {
+    	let steps = 0;
+      let speed = 300;
+  		snakeDirection = 'right';
+
+      const { height, width } = getBoardSize();
+
+
+  		const board = new Board(height, width);
+  		const snake = new Snake();
+      const step = () => {
+        try {
+          steps += 1;
+          if (steps % 200 === 0) {
+            speedUp()
+          };
+
+          if (steps % 10 === 0) board.spawnApple(height, width);
+
+          snake.move(snakeDirection);
+          board.draw(snake);
+        } catch (e) {
+          console.error({e})
+          beep(20, 261.63, 300)
+          beep(20, 311.13, 300)
+          beep(20, 369.99, 300)
+          clearInterval(game);
+          const newGame = confirm("Game over! Play again?")
+          if (newGame) return play();
+        }
+      }
+      let game = setInterval(step, speed);
+      const speedUp = () => {
+        console.log('speedingUp')
+        speed -= speed * 0.05;
+        clearInterval(game);
+        game = setInterval(step, speed);
+      }
+  	}
+
+  	// event listeners for changing direction
+    window.addEventListener('keydown', (e) => {
+    	const directions = {
+    		37: 'left',
+    		38: 'up',
+		    39: 'right',
+    		40: 'down',
+    	};
+    	const dir = e.keyCode;
+    	if (!directions[dir]) {
+    		console.error(`${directions[dir]} is not a valid direction`);
+    	} else {
+    		snakeDirection = directions[dir];
+    	}
+    });
+
+    const a = new AudioContext()
+    function beep(vol, freq, duration){
+      const v = a.createOscillator()
+      const u = a.createGain()
+      v.connect(u);
+      v.frequency.value = freq;
+      v.type = "sine";
+      u.connect(a.destination);
+      u.gain.value = vol * 0.01;
+      v.start(a.currentTime);
+      v.stop(a.currentTime + duration * 0.001);
+    }
+    play();
+
+  </script>
+</body>
+</html>
