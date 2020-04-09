@@ -1,0 +1,135 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>LetterPick</title>
+  <style type="text/css">
+    body {
+      background: lightgreen;
+      color: black;
+      text-align: center;
+      margin: 0 10%;
+    }
+
+    footer {
+      font-size: 10px;
+      position: fixed;
+      bottom: 0;
+      right: 0;
+    }
+
+    #main {
+      display: flex;
+      justify-content: space-evenly;
+    }
+
+    button {
+      font-size: 4rem;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>LetterPick</h1>
+  <div id='main'>
+    <button onclick="newRound()">New Game</button>
+  </main>
+  <footer>
+    Copyright © 2020 <a href="https://schwartz.world">Ian Schwartz</a>
+  </footer>
+
+  <script type="text/javascript">
+    /*
+    I'm going to attempt to use a technique called Literate Programming here. Rather than adding comments to code, this app will be mostly comments with a little code peppered throughout.
+    */
+
+    const languages = {
+      'eng': {
+        A: { pronunciation: 'A' }, B: { pronunciation: 'B' }, C: { pronunciation: 'C' }, 
+        D: { pronunciation: 'D' }, E: { pronunciation: 'E' }, F: { pronunciation: 'F' }, 
+        G: { pronunciation: 'G' }, H: { pronunciation: 'H' }, I: { pronunciation: 'I' }, 
+        J: { pronunciation: 'J' }, K: { pronunciation: 'K' }, L: { pronunciation: 'L' }, 
+        M: { pronunciation: 'M' }, N: { pronunciation: 'N' }, O: { pronunciation: 'O' }, 
+        P: { pronunciation: 'P' }, Q: { pronunciation: 'Q' }, R: { pronunciation: 'R' }, 
+        S: { pronunciation: 'S' }, T: { pronunciation: 'T' }, U: { pronunciation: 'U' }, 
+        V: { pronunciation: 'V' }, W: { pronunciation: 'W' }, X: { pronunciation: 'X' }, 
+        Y: { pronunciation: 'Y' }, Z: { pronunciation: 'Z' },
+      },
+      'arm': {
+        Ա: { pronunciation: 'ayp' }, Բ: { pronunciation: 'pen' }, Գ: { pronunciation: 'keem' }, 
+        Դ: { pronunciation: 'tah' }, Ե: { pronunciation: 'yetch' }, Զ: { pronunciation: 'tsah' }, 
+        Է: { pronunciation: 'hey' }, Ը: { pronunciation: 'et' }, Թ: { pronunciation: 'toe' }, 
+        Ժ: { pronunciation: 'zheh' }, Ի: { pronunciation: 'eenie' }, Լ: { pronunciation: 'oon' }, 
+        Խ: { pronunciation: 'kheh' }, Ծ: { pronunciation: 'dzah' }, Կ: { pronunciation: 'gen' }, 
+        Հ: { pronunciation: 'ho' }, Ձ: { pronunciation: 'tzah' }, Ղ: { pronunciation: 'ghad' }, 
+        Ճ: { pronunciation: 'dzeh' }, Մ: { pronunciation: 'men' }, Յ: { pronunciation: 'hee' }, 
+        Ն: { pronunciation: 'noo' }, Շ: { pronunciation: 'sha' }, Ո: { pronunciation: 'voe' }, 
+        Չ: { pronunciation: 'cha' }, Պ: { pronunciation: 'beh' }, Ջ: { pronunciation: 'tche' },
+        Ռ: { pronunciation: 'rah' }, Ս: { pronunciation: 'seh' }, Վ: { pronunciation: 'vev' },
+        Տ: { pronunciation: 'tyun' }, Ր: { pronunciation: 'reh' }, Ց: { pronunciation: 'tso' },
+        Ռ: { pronunciation: 'rah' }, Ս: { pronunciation: 'seh' }, Վ: { pronunciation: 'vev' },
+        Ւ: { pronunciation: 'hyn' }, Փ: { pronunciation: 'pyooeh' }, Ք: { pronunciation: 'keh' },
+        Օ: { pronunciation: 'oh' }, Ֆ: { pronunciation: 'feh' },
+      }
+    }
+
+    class Letter {
+      constructor({ display, pronunciation }) {
+        this.display = display;
+        this.pronunciation = pronunciation;
+      }
+
+      static speak (message) {
+        const msg = new SpeechSynthesisUtterance(message)
+        const voices = window.speechSynthesis.getVoices();
+
+        msg.voice = voices[0]
+        window.speechSynthesis.speak(msg)
+      } 
+
+      pronounce = () => {
+        Letter.speak(this.pronunciation)
+      }
+
+      challenge = () => {
+        Letter.speak('Find the letter ' + this.pronunciation);
+      }
+
+      button = (isActive) => {
+        if (!isActive) {
+          return `<button onclick="Letter.speak('Wrong. Please press ${this.pronunciation}')">${this.display}</button>`;
+        }
+        return `<button onclick="Letter.speak('Correct! You chose ${this.pronunciation}')">${this.display}</button>`;
+      }
+    }
+
+    const l = Object.entries(languages.arm).map(([letter, data]) => {
+      return new Letter({
+        display: letter,
+        pronunciation: data.pronunciation,
+      })
+    });
+    
+    const getThree = (arr) => {
+      const getOne = () => {
+        return l[Math.floor(Math.random() * arr.length)];
+      }
+      const three = new Set();
+      while (three.size < 3) {
+        three.add(getOne());
+      }
+      const arrThree = [...three];
+      return arrThree;
+    }
+    const newRound = () => {
+      const three = getThree(l);
+      const activeIndex = Math.floor(Math.random() * 3)
+
+      const buttons = three.map((letter, i) => letter.button(activeIndex === i)).join('');
+      document.querySelector('#main').innerHTML = buttons;
+      three[activeIndex].challenge();
+    }
+  </script>
+</body>
+</html>
