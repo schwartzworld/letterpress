@@ -7,7 +7,31 @@
   <title>LetterPress</title>
   <meta name="description" content="The HTML5 Herald">
   <style type="text/css">
-    
+    body {
+      background: lightgreen;
+      color: black;
+      text-align: center;
+      margin: 0 10%;
+    }
+
+    li {
+      text-align: left;
+    }
+
+    details {
+      text-align: left;
+    }
+
+    summary {
+      font-size: 1.25rem;
+    }
+
+    footer {
+      font-size: 10px;
+      position: fixed;
+      bottom: 0;
+      right: 0;
+    }
   </style>
 </head>
 
@@ -27,11 +51,45 @@
   </nav>
 
   <section>
-    <h3>Why single file?</h3>
-    <p>
-      All the games 
-    </p>
+    <h2>FAQ</h2>
+      <details>
+        <summary>What is a browser toy?</summary>
+        <p>
+          Some of these are games, some of them are more just interactive experiences for children. They are meant to be simple, safe ways to get your child acclimated with a computer (or even just pass the time).
+        </p>
+      </details>
+      <details>
+        <summary>Why single file?</summary>
+        <p>
+          All the apps on here can be saved to your computer and used offline without an internet connection. Just save the HTML page and open it. You don't even need an internet connection, meaning you can leave your children with the computer knowing they won't find their way to YouTube.
+        </p>
+        <p>
+          It is not possible to include images and fonts in a single file, so if you are saving locally you'll either need to have internet to load them or deal with the (still usable) apps without them.
+        </p>
+      </details>
+      <details>
+        <summary>Why do this?</summary>
+        <p>
+          Computers and the apps we play on them have gotten far less hackable. My goal for my children is to create a system of applications that they can modify and hack as they please, and in the process, grow my own knowledge. I'm a professional developer, and this is my creative outlet.
+        </p>
+      </details>
+      <details>
+        <summary>Cost?</summary>
+        <p>
+          All LetterPress apps are free as in speech and free as in beer.
+        </p>
+      </details>
+      <details>
+        <summary>Contribution</summary>
+        <p>
+          For feature requests, issues or to create a pull request visit <a href='https://github.com/schwartzworld/letterpress'>https://github.com/schwartzworld/letterpress</a>
+        </p>
+      </details>
   </section>
 
+
+  <footer>
+    Copyright © 2020 <a href="https://schwartz.world">Ian Schwartz</a>
+  </footer>
 </body>
 </html>
