@@ -145,6 +145,7 @@
     ]
 
     // utilities
+
     const isUpperCase = () => casing % 2 === 0;
     const isAlphaNumeric = keyCode => keyCode <= 90 && keyCode >= 48;
 
@@ -229,6 +230,14 @@
         </div>
       `
     }
+    function speak (message) {
+      var msg = new SpeechSynthesisUtterance(message)
+      var voices = window.speechSynthesis.getVoices().filter(voice => {
+        return voice.lang === 'en-US' && voice.name !== 'Samantha';
+      })
+      msg.voice = voices[Math.floor(Math.random() * voices.length)]
+      window.speechSynthesis.speak(msg)
+    }
 
     // Here's where the magic happens
     const showKey = (e) => {
@@ -237,6 +246,7 @@
       } else if (isAlphaNumeric(e.keyCode)) {
         const key = isUpperCase() ? e.key.toUpperCase() : e.key.toLowerCase();
         display.innerHTML = key;
+        speak(key);
       }
       setColors(10);
     }
