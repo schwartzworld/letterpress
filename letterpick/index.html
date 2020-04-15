@@ -1,0 +1,236 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>LetterPick</title>
+  <style type="text/css">
+    body {
+      background: #160F29;
+      color: #F3DFC1;
+      text-align: center;
+      margin: 0 10%;
+    }
+
+    footer {
+      font-size: 10px;
+      position: fixed;
+      bottom: 0;
+      right: 0;
+    }
+
+    #main {
+      display: flex;
+      justify-content: center;
+    }
+    @media (min-width: 320px) and (max-width: 480px) {
+      #main {
+        flex-direction: column;
+        justify-content: space-around;
+        height: 100%;
+      }      
+    }
+
+    button {
+      font-size: 4rem;
+      border-radius: 25px;
+      padding: 2rem;
+      background: #368F8B;
+      border: none;
+      color: #DDBEA8;
+      margin: 1rem;
+    }
+
+    button:hover {
+      background: #246A73;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 2rem;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>LetterPick</h1>
+  <div id='main'>
+    <button onclick="newRound()">New Game</button>
+  </div>
+  <div id='controls'>
+    <div id='langSelector'>
+      <input type="radio" checked name="lang" value="eng">English 
+      <input type="radio" name="lang" value="arm">Armenian 
+    </div>
+
+    <div id='difficultySelector'>
+      <input type="radio" name="diff" value="2">Easy 
+      <input type="radio" checked name="diff" value="3">Medium 
+      <input type="radio" name="diff" value="5">Hard 
+      <input type="radio" name="diff" value="7">Expert 
+    </div>  
+
+    <div id='caseSelector'>
+      <input type="radio" name="case" value="upper">Easy 
+      <input type="radio" checked name="case" value="lower">Medium
+    </div>  
+  </div>
+  <footer>
+    Copyright © 2020 <a href="https://schwartz.world">Ian Schwartz</a>
+  </footer>
+
+  <script type="text/javascript">
+    /*
+    I'm going to attempt to use a technique called Literate Programming here. Rather than adding comments to code, this app will be mostly comments with a little code peppered throughout.
+    */
+
+    const main = document.querySelector('#main');
+
+    const languages = {
+      'eng': [
+        { pronunciation: 'A', upper: 'A', lower: 'a' },
+        { pronunciation: 'B', upper: 'B', lower: 'b' },
+        { pronunciation: 'C', upper: 'C', lower: 'c' }, 
+        { pronunciation: 'D', upper: 'D', lower: 'd' },
+        { pronunciation: 'E', upper: 'E', lower: 'e' },
+        { pronunciation: 'F', upper: 'F', lower: 'f' }, 
+        { pronunciation: 'G', upper: 'G', lower: 'g' },
+        { pronunciation: 'H', upper: 'H', lower: 'h' },
+        { pronunciation: 'I', upper: 'I', lower: 'i' }, 
+        { pronunciation: 'J', upper: 'J', lower: 'j' },
+        { pronunciation: 'K', upper: 'K', lower: 'k' },
+        { pronunciation: 'L', upper: 'L', lower: 'l' }, 
+        { pronunciation: 'M', upper: 'M', lower: 'm' },
+        { pronunciation: 'N', upper: 'N', lower: 'n' },
+        { pronunciation: 'O', upper: 'O', lower: 'o' }, 
+        { pronunciation: 'P', upper: 'P', lower: 'p' },
+        { pronunciation: 'Q', upper: 'Q', lower: 'q' },
+        { pronunciation: 'R', upper: 'R', lower: 'r' }, 
+        { pronunciation: 'S', upper: 'S', lower: 's' },
+        { pronunciation: 'T', upper: 'T', lower: 't' },
+        { pronunciation: 'U', upper: 'U', lower: 'u' }, 
+        { pronunciation: 'V', upper: 'V', lower: 'v' },
+        { pronunciation: 'W', upper: 'W', lower: 'w' },
+        { pronunciation: 'X', upper: 'X', lower: 'x' }, 
+        { pronunciation: 'Y', upper: 'Y', lower: 'y' },
+        { pronunciation: 'Z', upper: 'Z', lower: 'z' },
+      ],
+      'arm': [
+        { pronunciation: 'ayp', upper: 'Ա', lower: 'ա' },
+        { pronunciation: 'pen', upper: 'Բ', lower: 'բ' },
+        { pronunciation: 'keem', upper: 'Գ', lower: 'գ' }, 
+        { pronunciation: 'tah', upper: 'Դ', lower: 'դ' },
+        { pronunciation: 'yetch', upper: 'Ե', lower: 'ե' },
+        { pronunciation: 'tsah', upper: 'Զ', lower: 'զ' }, 
+        { pronunciation: 'hey', upper: 'Է', lower: 'է' },
+        { pronunciation: 'et', upper: 'Ը', lower: 'ը' },
+        { pronunciation: 'toe', upper: 'Թ', lower: 'թ' }, 
+        { pronunciation: 'zheh', upper: 'Ժ', lower: 'ժ' },
+        { pronunciation: 'eenie', upper: 'Ի', lower: 'ի' }, 
+        { pronunciation: 'lyun', upper: 'Լ', lower: 'լ' }, 
+        { pronunciation: 'kheh', upper: 'Խ', lower: 'խ' },
+        { pronunciation: 'dzah', upper: 'Ծ', lower: 'ծ' },
+        { pronunciation: 'gen', upper: 'Կ', lower: 'կ' }, 
+        { pronunciation: 'ho', upper: 'Հ', lower: 'հ' },
+        { pronunciation: 'tzah', upper: 'Ձ', lower: 'ձ' },
+        { pronunciation: 'ghad', upper: 'Ղ', lower: 'ղ' }, 
+        { pronunciation: 'dzeh', upper: 'Ճ', lower: 'ճ' },
+        { pronunciation: 'men', upper: 'Մ', lower: 'մ' },
+        { pronunciation: 'hee', upper: 'Յ', lower: 'յ' }, 
+        { pronunciation: 'noo', upper: 'Ն', lower: 'ն' },
+        { pronunciation: 'sha', upper: 'Շ', lower: 'շ' },
+        { pronunciation: 'voe', upper: 'Ո', lower: 'ո' }, 
+        { pronunciation: 'cha', upper: 'Չ', lower: 'չ' }, 
+        { pronunciation: 'beh', upper: 'Պ', lower: 'պ' }, 
+        { pronunciation: 'tche', upper: 'Ջ', lower: 'ջ' },
+        { pronunciation: 'rah', upper: 'Ռ', lower: 'ռ' }, 
+        { pronunciation: 'seh', upper: 'Ս', lower: 'ս' }, 
+        { pronunciation: 'vev', upper: 'Վ', lower: 'վ' },
+        { pronunciation: 'tyun', upper: 'Տ', lower: 'տ'}, 
+        { pronunciation: 'reh', upper: 'Ր', lower: 'ր' }, 
+        { pronunciation: 'tso', upper: 'Ց', lower: 'ց' },
+        { pronunciation: 'hyn', upper: 'Ւ', lower: 'ւ' }, 
+        { pronunciation: 'pyooeh', upper: 'Փ', lower: 'փ' },
+        { pronunciation: 'keh', upper: 'Ք', lower: 'ք' },
+        { pronunciation: 'oh', upper: 'Օ', lower: 'օ' },
+        { pronunciation: 'feh', upper: 'Ֆ', lower: 'ֆ' },
+      ]
+    }
+
+    class Letter {
+      constructor({ upper, lower, pronunciation }) {
+        this.upper = upper;
+        this.lower = lower;
+        this.pronunciation = pronunciation;
+      }
+
+      static speak (message) {
+        const msg = new SpeechSynthesisUtterance(message)
+        const voices = window.speechSynthesis.getVoices();
+
+        msg.voice = voices[0]
+        window.speechSynthesis.speak(msg)
+      } 
+
+      pronounce = () => {
+        Letter.speak(this.pronunciation)
+      }
+
+      challenge = () => {
+        Letter.speak('Find the letter ' + this.pronunciation);
+      }
+
+      button = (isActive, activePronunciation, casing) => {
+        if (!isActive) {
+          return `<button onclick="Letter.speak('Wrong. Please press ${activePronunciation}')">${this[casing]}</button>`;
+        }
+        return `<button onclick="win('${this.pronunciation}')">${this[casing]}</button>`;
+      }
+    }
+
+    const getOne = (arr = []) => arr[Math.floor(Math.random() * arr.length)];
+    
+    const shuffle = (array) => {
+      return array.sort(() => Math.random() - 0.5);
+    };
+
+    const newRound = () => {
+      const lang = getRadioValue('lang');
+      const diff = getRadioValue('diff');
+      const casing = getRadioValue('case')
+      const l = languages[lang].map((letter) => {
+        return new Letter(letter)
+      });
+      const active = getOne(l);
+
+      const choices = new Set();
+      choices.add(active);
+
+      active.challenge();
+      while (choices.size < Number(diff)) {
+        choices.add(getOne(l));
+      }
+      
+      const arrChoices = shuffle([...choices.keys()]);
+
+      const buttons = arrChoices.map(choice => {
+        return choice.button(choice === active, active.pronunciation, casing);
+      }).join('');
+      main.innerHTML = buttons;
+    }
+
+    const win = (letter) => {
+      Letter.speak('Correct! You chose ' + letter);
+      setTimeout(newRound, 1000);
+    }
+
+function getRadioValue(name) { 
+  var ele = document.getElementsByName(name); 
+    
+  for(i = 0; i < ele.length; i++) { 
+    if(ele[i].checked) return ele[i].value; 
+  } 
+} 
+  </script>
+</body>
+</html>
