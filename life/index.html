@@ -1,0 +1,293 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Game of Liff</title>
+  <meta name="description" content="Conway's Game of Life in HTML">
+  <style type="text/css">
+    body {
+      font-family: 'Courier New';
+      font-size: 15px;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    button {
+      height: 3rem;
+      min-width: 4rem;
+      border: 3px solid green;
+      border-radius: 25px;
+    }
+
+    #wrapper {
+      position: fixed;
+      height: calc(100% - 20px);
+      width: calc(100% - 20px);
+      top: 0;
+      left: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 10px solid black;
+    }
+
+    #game {
+      width: 100%;
+    }
+
+    .cell {
+      height: 24px;
+      width: 24px;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 5;
+      border: 0.5px solid gray;
+      cursor: pointer;
+    }
+
+    .row {
+      display: flex;
+    }
+    .alive {
+      background: black;
+      color: white;
+    }
+
+    .alive:hover {
+      background: darkblue;
+      color: lightblue;
+    }
+
+    .dead {
+      background: white;
+    }
+
+    .dead:hover {
+      background: lightblue;
+      color: darkblue;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 2rem;
+      left: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div id='wrapper'>
+    <div id='game'></div>
+  </div>
+  <div id='controls'>
+    <button class='dead' onclick='start()'>start</button>
+    <button class='alive' onclick='stop()'>stop</button>
+    <button onclick='faster()'>faster</button>
+    <button onclick='slower()'>slower</button>
+    <button onclick='play()'>reset</button>
+    <button onclick='step()'>steps: 0</button>
+  </div>
+  <script>
+    /*
+    Any live cell with two or three live neighbors survives.
+    Any dead cell with three live neighbors becomes a live cell.
+    All other live cells die in the next generation. Similarly, all other dead cells stay dead.
+    */
+    const game = document.querySelector('#game');
+
+    class Cell {
+      constructor(row, col, alive = false) {
+        this.id = `${row},${col}`;
+        this.row = row;
+        this.col = col;
+        this.alive = alive;
+      }
+
+      toggle = () => {
+        this.alive = !this.alive;
+      }
+
+      neighbors = () => {
+        return gameBoard ? gameBoard.getNeighbors(this.row, this.col) : [];
+      }
+
+      aliveNeighbors = () => this.neighbors().reduce((total, cell) => {
+        if (cell.alive) {
+          return total += 1;
+        }
+        return total;
+      }, 0);
+
+      nextState = () => {
+        const {row, col} = this;
+        
+        const aliveNeighbors = this.aliveNeighbors();
+
+        if (aliveNeighbors === 3) {
+          return new Cell(this.row, this.col, true);
+        } else if (aliveNeighbors === 2) {
+          return this;
+        } else {
+          return new Cell(this.row, this.col, false);
+        }
+      }
+
+      toRepresentation = () => {
+        const aliveNeighbors = this.aliveNeighbors();
+        const className = this.alive ? 'alive' : 'dead';
+        return `<div class='cell ${className}' onclick="gameBoard.toggle(${this.row},${this.col})">${aliveNeighbors}</div>`
+      }
+    }
+
+    class Row {
+      constructor(length, rid, cells) {
+        this.length = length;
+        this.id = rid;
+        if (cells) {
+          this.cells = cells;
+        } else {
+          const blankCells = new Array(length).fill(null).map((cell, cid) => new Cell(Number(rid), Number(cid)));
+          this.cells = new Map();
+          blankCells.forEach((cell, cid) => {
+            this.cells.set(cid, cell);
+          });
+        }
+      }
+
+      toRepresentation = () => {
+        const cells = [...this.cells.values()].map(cell => cell.toRepresentation()).join('');
+        return `<div class='row'>${cells}</div>`
+      }
+
+      nextState = () => {
+        const next = new Map();
+        this.cells.forEach((cell, cid) => {
+          next.set(cid, cell.nextState())
+        });
+        return new Row(this.length, this.id, next);
+      }
+    }
+
+  	class Board {
+  		constructor(rows) {
+        if (rows) {
+          this.rows = rows;
+        } else {
+          const { height, width } = Board.getBoardSize();
+          const rows = new Array(height).fill(null).map((row, rid) => new Row(width, Number(rid)));
+          const r = new Map()
+          rows.forEach((row, rid) => r.set(rid, row));
+          this.rows = r;
+        } 
+        this.draw();
+  		}
+
+      toggle = (x, y) => {
+        const row = this.rows.get(x);
+        const cell = row.cells.get(y);
+        cell.toggle();
+        this.draw();
+      }
+
+  		draw = () => {
+        const board = [...this.rows.values()].map(row => row.toRepresentation()).join('');
+        game.innerHTML = board;
+        stepButton.innerText = `steps: ${steps}`;
+      }
+
+      nextState = () => {
+        const next = new Map();
+        this.rows.forEach((row, rid) => {
+          next.set(rid, row.nextState())
+        });
+        return new Board(next);
+      }
+
+      getCell = (([r, c]) => {
+        const row = this.rows.get(r);
+        if (!row) return {};
+        const col = row.cells.get(c);
+        return col || {};
+      })
+
+      getNeighbors = (row, cell) => {
+        const r = Number(row);
+        const c = Number(cell);
+        return [
+          [r - 1, c - 1], [r - 1, c], [r - 1, c + 1],
+          [r, c - 1], [r, c + 1],
+          [r + 1, c - 1], [r + 1, c], [r + 1, c + 1],
+        ].map(this.getCell);
+      }
+
+      static getBoardSize = () => {
+        const height = Math.floor(document.body.clientHeight / 25);
+        const width = Math.floor(document.body.clientWidth / 25);
+        return { height, width };
+      }
+
+      static create = () => {
+        return new Board();
+      }
+  	}
+
+    let gameBoard;
+
+    let liff;
+
+    let speed = 300;
+    let steps = 0;
+
+    const faster = () => {
+      speed -= (speed * 0.2);
+      if (startButton.className === 'alive') start();
+    }
+
+    const slower = () => {
+      speed += (speed * 0.2);
+      if (startButton.className === 'alive') start();
+    }
+
+    const [startButton, stopButton, fasterButton, slowerButton, resetButton, stepButton] = document.querySelectorAll('button');
+
+    const start = () => {
+      stop();
+      startButton.className = 'alive';
+      stopButton.className = 'dead';
+      liff = setInterval(step, speed);
+    }
+
+    const stop = () => {
+      clearInterval(liff);
+      startButton.className = 'dead';
+      stopButton.className = 'alive';
+      gameBoard.draw();
+    }
+
+    const step = () => {
+      try {
+        steps += 1;
+        const nextBoard = gameBoard.nextState();
+        gameBoard.draw();
+        gameBoard = nextBoard;
+      } catch (e) {
+        console.error({e})
+        clearInterval(game);
+      }
+    }
+
+  	const play = () => {
+      steps = 0;
+      gameBoard = Board.create();
+      gameBoard.draw();
+  	}
+
+    play();
+  </script>
+</body>
+</html>
