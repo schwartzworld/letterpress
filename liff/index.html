@@ -77,6 +77,10 @@
       bottom: 2rem;
       left: 1rem;
     }
+
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 
@@ -98,8 +102,24 @@
     Any dead cell with three live neighbors becomes a live cell.
     All other live cells die in the next generation. Similarly, all other dead cells stay dead.
     */
-    const game = document.querySelector('#game');
 
+    // event listener for showing / hiding controls
+    document.body.onkeyup = function(e){
+      if(e.keyCode == 32){
+        toggleControls();
+      }
+    }
+
+    const game = document.querySelector('#game');
+    const controls = document.querySelector('#controls');
+
+    const toggleControls = () => {
+      if (controls.className === 'hidden') {
+        controls.className = '';
+      } else {
+        controls.className = 'hidden';
+      }
+    }
     class Cell {
       constructor(row, col, alive = false) {
         this.id = `${row},${col}`;
@@ -288,6 +308,14 @@
   	}
 
     play();
+
+    const message =`Any live cell with fewer than two live neighbours dies
+Any live cell with two or three live neighbours lives
+Any live cell with more than three live neighbours dies
+Any dead cell with exactly three live neighbours becomes a live cell
+Press the spacebar to show/hide controls
+`
+    alert(message);
   </script>
 </body>
 </html>
