@@ -1,0 +1,336 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>BombMopper</title>
+  <meta name="description" content="MineSweeper clone in HTML and JS">
+  <style type="text/css">
+    body {
+      font-family: 'Courier New';
+      font-size: 15px;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    button {
+      background: #00429d;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 10px;
+      cursor: pointer;
+      border: none;
+    }
+
+    button:hover {
+      background: #2e59a8;
+    }
+
+    #wrapper {
+      position: fixed;
+      height: calc(100% - 20px);
+      width: calc(100% - 20px);
+      top: 0;
+      left: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 10px solid black;
+    }
+
+    #game {
+      width: 100%;
+    }
+
+    #controls {
+      position: fixed;
+      left: 1rem;
+      bottom: 1rem;
+      background: white;
+      z-index: 99;
+      padding: 1rem;
+      border-radius: 10px;
+    }
+
+    .cell {
+      font-size: 125%;
+      height: 23px;
+      width: 23px;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 5;
+      border: 1px outset gray;
+      cursor: pointer;
+      font-weight: bolder;
+      background: #ffffe0;
+    }
+
+    .cell:hover {
+      background: #3f5c8a;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .a {
+      background: #c5eddf;
+    }
+    .b {
+      background: #a5d5d8;
+    }
+    .c {
+      background: #8abccf;
+    }
+    .d {
+      background: #73a2c6;
+    }
+    .e {
+      background: #5d8abd;
+    }
+    .f {
+      background: #4771b2;
+    }
+    .g {
+      background: #2e59a8;
+    }
+    .h {
+      background: #00429d;
+    }
+    .closed {
+      background: darkgrey;
+    }
+    .marked {
+      background: green;
+    }
+    .bomb {
+      background: darkred;
+    }
+    .hidden {
+      display: none;
+    }
+    footer {
+      font-size: 10px;
+      position: fixed;
+      bottom: 0;
+      right: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id='wrapper'>
+    <div id='game'></div>
+    <div id='controls'>
+      <p>Left click to reveal a cell, right click to mark it as a bomb</p>
+      <p>Resize window to adjust board size</p>
+      <p>Press <code>space</code> to toggle these instructions</p>
+      <p>
+        <button onClick="reset()">New Game</button> 
+        <input type="radio" checked name="diff" value="20">Easy 
+        <input type="radio" name="diff" value="10">Medium
+        <input type="radio" checked name="diff" value="7">Hard 
+        <input type="radio" name="diff" value="4">Expert 
+      </p>
+      <p><a href="/">LetterPress HomePage</a></p>
+    </div>
+  </div>
+  <footer>
+    Copyright © 2020 <a href="https://schwartz.world">Ian Schwartz</a><br />
+    <a href='/'>HOME</a>
+  </footer>
+  <script>
+    const game = document.querySelector('#game');
+    const controls = document.querySelector('#controls');
+    
+    document.addEventListener( "contextmenu", function(e, el) {
+      e.preventDefault();
+      const cell = e.srcElement.id.split(',').map(Number);
+      gameBoard.markBomb(cell)
+    });
+
+    document.body.onkeyup = function(e){
+      console.log({e})
+      if (controls.className === 'hidden') {
+        controls.className = '';
+      } else {
+        controls.className = 'hidden';
+      }
+    }
+
+    function getRadioValue(name) { 
+      var ele = document.getElementsByName(name); 
+        
+      for(i = 0; i < ele.length; i++) { 
+        if(ele[i].checked) return ele[i].value; 
+      } 
+    } 
+
+    class Cell {
+      constructor(row, col, diff) {
+        this.id = `${row},${col}`;
+        this.row = row;
+        this.col = col;
+        this.isAMine = Math.floor(Math.random() * diff) % diff === 0;
+        this.open = true;
+        this.isMarked = false;
+      }
+
+      toggle = () => {
+        if (!this.open) this.open = true;
+        if (this.isAMine) {
+          gameBoard.draw();
+          setTimeout(gameBoard.lose, 200);
+        }
+        if (!this.isAMine && !this.minesTouching()) {
+          this.neighbors().forEach(n => {
+            if (n.toggle && !n.open && !n.isMarked) n.toggle();
+          })
+        } 
+      }
+
+      markBomb = () => this.isMarked = !this.isMarked;
+
+      neighbors = () => {
+        return gameBoard ? gameBoard.getNeighbors(this.row, this.col) : [];
+      }
+
+      minesTouching = () => {
+        return this.neighbors().reduce((total, cell) => {
+          return cell.isAMine ? total += 1 : total;
+        }, 0);
+      }
+
+      toRepresentation = () => {
+        if (this.open) {
+          const inner = this.isAMine ? '🤯' : this.minesTouching() || '';
+          const bgClass = Cell.bgClasses[inner];
+          const bombClass = this.isAMine ? 'bomb' : '';
+          return `<div id='${this.id}' class='cell ${bgClass} ${bombClass}'>
+            <div>${inner}</div>
+          </div>`
+        }
+
+        if (this.isMarked) {
+          return `<div id='${this.id}' class='cell marked'>💩</div>`
+        }
+
+        return `<div id='${this.id}' class='cell closed' onclick="gameBoard.toggle(${this.row},${this.col})"></div>`
+      }
+
+      static bgClasses = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    }
+
+    class Row {
+      constructor(length, rid, diff) {
+        this.length = length;
+        this.id = rid;
+        
+        const blankCells = new Array(length).fill(null).map((cell, cid) => {
+          const c = new Cell(Number(rid), Number(cid), diff);
+          c.open = false;
+          c.isMarked = false;
+          return c;
+        });
+        this.cells = new Map();
+        blankCells.forEach((cell, cid) => {
+          this.cells.set(cid, cell);
+        });
+      }
+
+      toRepresentation = () => {
+        const cells = [...this.cells.values()].map(cell => cell.toRepresentation()).join('');
+        return `<div class='row'>${cells}</div>`
+      }
+
+      nextState = () => {
+        const next = new Map();
+        this.cells.forEach((cell, cid) => {
+          next.set(cid, cell.nextState())
+        });
+        return new Row(this.length, this.id, next);
+      }
+    }
+
+  	class Board {
+  		constructor(diff) {
+        const { height, width } = Board.getBoardSize();
+        const rows = new Array(height).fill(null).map((row, rid) => new Row(width, Number(rid), diff));
+        const r = new Map()
+        rows.forEach((row, rid) => r.set(rid, row));
+        this.rows = r;
+
+        this.draw();
+  		}
+
+      toggle = (x, y) => {
+        const row = this.rows.get(x);
+        const cell = row.cells.get(y);
+        cell.toggle();
+
+        this.draw();
+      }
+
+  		draw = () => {
+        const board = [...this.rows.values()].map(row => row.toRepresentation()).join('');
+        game.innerHTML = board;
+      }
+
+      markBomb = (cell) => {
+        const c = this.getCell(cell);
+        c.markBomb();
+        this.draw();
+      }
+
+      getCell = (([r, c]) => {
+        const row = this.rows.get(r);
+        if (!row) return {};
+        const col = row.cells.get(c);
+        return col || {};
+      })
+
+      getNeighbors = (row, cell) => {
+        const r = Number(row);
+        const c = Number(cell);
+        return [
+          [r - 1, c - 1], [r - 1, c], [r - 1, c + 1],
+          [r, c - 1], [r, c + 1],
+          [r + 1, c - 1], [r + 1, c], [r + 1, c + 1],
+        ].map(this.getCell);
+      }
+
+      lose = () => {
+        this.draw();
+        var r = confirm("You lost!");
+        if (r) {
+          return reset();
+        }
+      }
+
+      static getBoardSize = () => {
+        const height = Math.floor(document.body.clientHeight / 25);
+        const width = Math.floor(document.body.clientWidth / 25);
+        return { height, width };
+      }
+
+      static create = () => {
+        return new Board();
+      }
+  	}
+
+    let gameBoard;
+
+  	const reset = () => {
+      const diff = getRadioValue('diff');
+      gameBoard = new Board(Number(diff));
+      gameBoard.draw();
+  	}
+
+    reset();
+  </script>
+</body>
+</html>
