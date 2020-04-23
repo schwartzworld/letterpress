@@ -1,0 +1,319 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Game of Liff</title>
+  <meta name="description" content="Conway's Game of Life in HTML">
+  <style type="text/css">
+    body {
+      font-family: 'Courier New';
+      font-size: 15px;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    button {
+      height: 3rem;
+      min-width: 4rem;
+      border: 3px solid green;
+      border-radius: 25px;
+    }
+
+    #wrapper {
+      position: fixed;
+      height: calc(100% - 20px);
+      width: calc(100% - 20px);
+      top: 0;
+      left: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 10px solid black;
+    }
+
+    #game {
+      width: 100%;
+    }
+
+    .cell {
+      height: 24px;
+      width: 24px;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 5;
+      border: 0.5px solid gray;
+      cursor: pointer;
+      font-weight: bolder;
+    }
+
+    .row {
+      display: flex;
+    }
+    .alive {
+      background: #C64191;
+      color: white;
+    }
+
+    .alive:hover {
+      background: darkblue;
+      color: lightblue;
+    }
+
+    .dead {
+      background: #ddd;
+    }
+
+    .dead:hover {
+      background: lightblue;
+      color: darkblue;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 2rem;
+      left: 1rem;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    footer {
+      background: white;
+      font-size: 50%;
+      display: inline-block;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div id='wrapper'>
+    <div id='game'></div>
+  </div>
+  <section id='controls'>
+    <button class='dead' onclick='start()'>start</button>
+    <button class='alive' onclick='stop()'>stop</button>
+    <footer>
+      Copyright © 2020 <a href="https://schwartz.world">Ian Schwartz</a><br />
+      <a href='/'>HOME</a>
+    </footer>
+  </section>
+  <script>
+    /*
+    Any live cell with two or three live neighbors survives.
+    Any dead cell with three live neighbors becomes a live cell.
+    All other live cells die in the next generation. Similarly, all other dead cells stay dead.
+    */
+
+    // event listener for showing / hiding controls
+    document.body.onkeyup = function(e){
+      if(e.keyCode == 32){
+        toggleControls();
+      }
+    }
+
+    const game = document.querySelector('#game');
+    const controls = document.querySelector('#controls');
+
+    const toggleControls = () => {
+      if (controls.className === 'hidden') {
+        controls.className = '';
+      } else {
+        controls.className = 'hidden';
+      }
+    }
+    class Cell {
+      constructor(row, col, alive = false) {
+        this.id = `${row},${col}`;
+        this.row = row;
+        this.col = col;
+        this.alive = alive;
+      }
+
+      toggle = () => {
+        this.alive = !this.alive;
+      }
+
+      neighbors = () => {
+        return gameBoard ? gameBoard.getNeighbors(this.row, this.col) : [];
+      }
+
+      nextState = () => {
+        return this;
+      }
+
+      toRepresentation = (activePiece) => {
+        const isActive = activePiece.shapeIDs().find(cell => cell === this.id);
+        return `<div class='cell' style="${isActive ? 'background: red;' : ''}"></div>`
+      }
+    }
+
+    class Row {
+      constructor(length, rid, cells) {
+        this.length = length;
+        this.id = rid;
+        if (cells) {
+          this.cells = cells;
+        } else {
+          const blankCells = new Array(length).fill(null).map((cell, cid) => new Cell(Number(rid), Number(cid)));
+          this.cells = new Map();
+          blankCells.forEach((cell, cid) => {
+            this.cells.set(cid, cell);
+          });
+        }
+      }
+
+      toRepresentation = (activePiece) => {
+        const cells = [...this.cells.values()].map(cell => cell.toRepresentation(activePiece)).join('');
+        return `<div class='row'>${cells}</div>`
+      }
+
+      nextState = () => {
+        const next = new Map();
+        this.cells.forEach((cell, cid) => {
+          next.set(cid, cell.nextState())
+        });
+        return new Row(this.length, this.id, next);
+      }
+    }
+
+    class Piece {
+      constructor(props = {}) {
+        const { x = 0, y = 0, form = 'L'} = props;
+        this.x = x;
+        this.y = y;
+        this.form = form;
+        this.position = 0;
+        console.log(this)
+      }
+      shape = () => {
+        const {x , y} = this;
+        const shapes = { L: [ [{x, y}, {x: x + 1, y }, {x, y: y + 1}, {x, y: y + 2}]] }
+        return shapes[this.form][this.position];
+      }
+      shapeIDs = () => this.shape().map(cell => `${cell.x},${cell.y}`);
+      isIn = (cell) => {
+        return this.shapeIDs.includes(cell.id)
+      }
+    }
+
+  	class Board {
+  		constructor(rows) {
+        if (rows) {
+          this.rows = rows;
+        } else {
+          const   height = 20,
+                  width = 10,
+                  rows = new Array(height).fill(null).map((row, rid) => new Row(width, Number(rid))),
+                  r = new Map();
+          rows.forEach((row, rid) => r.set(rid, row));
+          this.rows = r;
+
+          this.activePiece = new Piece();
+        } 
+        this.draw();
+  		}
+
+      toggle = (x, y) => {
+        const row = this.rows.get(x);
+        const cell = row.cells.get(y);
+        cell.toggle();
+        this.draw();
+      }
+
+  		draw = () => {
+        const board = [...this.rows.values()].map(row => row.toRepresentation(this.activePiece)).join('');
+        game.innerHTML = board;
+      }
+
+      nextState = () => {
+        const next = new Map();
+        this.rows.forEach((row, rid) => {
+          next.set(rid, row.nextState())
+        });
+        return new Board(next);
+      }
+
+      getCell = (([r, c]) => {
+        const row = this.rows.get(r);
+        if (!row) return {};
+        const col = row.cells.get(c);
+        return col || {};
+      })
+
+      getNeighbors = (cells) => {
+        return cells.map(cell => {
+          const row = Number(cell.row);
+          const col = Number(cell.cell);
+
+          const prevRow = row - 1;
+          const nextRow = row + 1;
+          const prevCol = col - 1;
+          const nextCol = col + 1;
+          return {
+            prevRow, row, nextRow, prevCol, col, nextCol
+          }
+        })
+      }
+
+      static create = () => {
+        return new Board();
+      }
+  	}
+
+    let gameBoard;
+
+    let liff;
+
+    let speed = 500;
+    let steps = 0;
+
+    const faster = () => {
+      speed -= (speed * 0.2);
+    }
+
+    const slower = () => {
+      speed += (speed * 0.2);
+    }
+
+    const [startButton, stopButton, fasterButton, slowerButton, resetButton, stepButton] = document.querySelectorAll('button');
+
+    const start = () => {
+      stop();
+      liff = setInterval(step, speed);
+    }
+
+    const stop = () => {
+      clearInterval(liff);
+      gameBoard.draw();
+    }
+
+    const step = () => {
+      const { activePiece } = gameBoard
+
+      try {
+        steps += 1;
+        gameBoard.draw();
+      } catch (e) {
+        console.error({e})
+        clearInterval(game);
+      }
+    }
+
+  	const play = () => {
+      steps = 0;
+      gameBoard = Board.create();
+      gameBoard.draw();
+      start();
+  	}
+
+    play();
+  </script>
+</body>
+</html>

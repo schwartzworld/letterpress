@@ -5,93 +5,252 @@
   <meta charset="utf-8">
 
   <title>LetterPress</title>
+  <link href="https://fonts.googleapis.com/css?family=Love+Ya+Like+A+Sister|Londrina+Shadow|Chewy|Bowlby+One+SC|Modak|Boogaloo|Bowly+One+SC|Fredericka+the+Great|Special+Elite&display=swap" rel="stylesheet">
+
+
   <style type="text/css">
-    body {
-      background: lightgreen;
-      color: black;
+    main {
+      height: 100vh;
+      width: 100vw;
+      background: pink;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 40vw;
+      z-index: 4;
+      font-family: 'Love Ya Like A Sister', cursive;
+    }
+
+    .fixedBtn {
+      position: fixed;
+      z-index: 5;
+      border: none;
+      cursor: pointer;
+    }
+
+    #caseBtn {
+      bottom: 0;
+      left: 0;
+      width: 200px;
+      height: 75px;
+      font-size: 30px;
+      background: #000;
+      color: pink;
+    }
+
+    #fontBtn {
+      top: 0;
+      right: 0;
+      background: #000;
+      color: pink;
+    }
+
+    .btn {
+      padding: 20px;
+      border: none;
+      background: #000;
+      color: pink;
+      cursor: pointer;
+    }
+
+    #instructions {
       text-align: center;
-      margin: 0 10%;
+      font-size: 20px;
     }
-
-    li {
-      text-align: left;
-    }
-
-    details {
-      text-align: left;
-    }
-
-    summary {
-      font-size: 1.25rem;
-    }
-
-    footer {
+    #attribution {
       font-size: 10px;
       position: fixed;
       bottom: 0;
       right: 0;
     }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    a {
+      color: inherit;
+    }
   </style>
 </head>
 
 <body>
-  <h1>LetterPress</h1>
-  <h2>Free, single file browser toys for children</h2>
+  <main>
+    <div id='display'>
+      <div id='instructions'>
+        <h1>Welcome to LetterPress, a game for kids.</h1>
+        <p>Press any letter or number to see it on screen</p>
+        <p>The little buttton on top changes the font</p>
+        <p>The big buttton on the bottom toggles uppercase and lowercase</p>
+        <p>Press <code>~</code> to see options</p>
+        <button class='btn' onClick='enterFullScreen()'>FULL SCREEN</button>
+      </div>
+    </div>
+    <div id='attribution'>
+      Copyright © 2020 <a href="https://schwartz.world">Ian Schwartz</a>
+    </div>
+    <div className='modal' id='options'>
+      
+    </div>
+  </main>
+  <button id='caseBtn' class='fixedBtn' onClick='toggleCase()'>BIG</button>
+  <button id='fontBtn' class='fixedBtn' onClick='toggleFont()'>Love Ya Like A Sister</button>
 
-  <nav>
-    <ul>
-      <li>
-        <a href="/letterpress">LetterPress</a> - Press letters to see them on screen
-      </li>
-      <li>
-        <a href="/snek">SNEK</a> - A snake game with toggleable theming
-      </li>
-      <li>
-        <a href="/letterpick">LetterPick</a> - Multi-lingual alphabet training for children
-      </li>
-    </ul>
-  </nav>
+  <script>
+    // constants
+    const display = document.querySelector('#display');
+    const main = document.querySelector('main');
+    const caseBtn = document.querySelector('#caseBtn');
+    const fontBtn = document.querySelector('#fontBtn');
+    const instructions = document.querySelector('#instructions');
+    const fonts = [
+      {
+        name: 'Love Ya Like A Sister',
+        family: "'Love Ya Like A Sister', cursive"
+      },
+      {
+        name: 'Londrina Shadow',
+        family: "'Londrina Shadow', cursive"
+      },
+      {
+        name: 'Chewy',
+        family: "'Chewy', cursive"
+      },
+      {
+        name: 'Modak',
+        family: "'Modak', cursive"
+      },
+      {
+        name: 'Boogaloo',
+        family: "'Boogaloo', cursive"
+      },
+      {
+        name: 'Special Elite',
+        family: "'Special Elite', cursive"
+      },
+      {
+        name: 'Fredericka the Great',
+        family: "'Fredericka the Great', cursive"
+      },
+      {
+        name: 'Bowlby One SC',
+        family: "'Bowlby One SC', cursive"
+      },
+    ]
 
-  <section>
-    <h2>FAQ</h2>
-      <details>
-        <summary>What is a browser toy?</summary>
-        <p>
-          Some of these are games, some of them are more just interactive experiences for children. They are meant to be simple, safe ways to get your child acclimated with a computer (or even just pass the time).
-        </p>
-      </details>
-      <details>
-        <summary>Why single file?</summary>
-        <p>
-          All the apps on here can be saved to your computer and used offline without an internet connection. Just save the HTML page and open it. You don't even need an internet connection, meaning you can leave your children with the computer knowing they won't find their way to YouTube.
-        </p>
-        <p>
-          It is not possible to include images and fonts in a single file, so if you are saving locally you'll either need to have internet to load them or deal with the (still usable) apps without them.
-        </p>
-      </details>
-      <details>
-        <summary>Why do this?</summary>
-        <p>
-          Computers and the apps we play on them have gotten far less hackable. My goal for my children is to create a system of applications that they can modify and hack as they please, and in the process, grow my own knowledge. I'm a professional developer, and this is my creative outlet.
-        </p>
-      </details>
-      <details>
-        <summary>Cost?</summary>
-        <p>
-          All LetterPress apps are free as in speech and free as in beer.
-        </p>
-      </details>
-      <details>
-        <summary>Contribution</summary>
-        <p>
-          For feature requests, issues or to create a pull request visit <a href='https://github.com/schwartzworld/letterpress'>https://github.com/schwartzworld/letterpress</a>
-        </p>
-      </details>
-  </section>
+    // utilities
 
+    const isUpperCase = () => casing % 2 === 0;
+    const isAlphaNumeric = keyCode => keyCode <= 90 && keyCode >= 48;
 
-  <footer>
-    Copyright © 2020 <a href="https://schwartz.world">Ian Schwartz</a>
-  </footer>
+    // global state
+    let casing = 0;
+    let activeFontIndex = 0;
+    let flashingColors = true;
+
+    const activeFont = () => fonts[activeFontIndex % fonts.length];
+
+    const toggleFont = () => {
+      activeFontIndex += 1;
+      const {name, family} = activeFont();
+      fontBtn.innerHTML = name;
+      main.style.fontFamily = family;
+      setColors();
+    }
+
+    const toggleCase = () => {
+      instructions.style.display = 'none';
+      casing += 1;
+      caseBtn.innerHTML = isUpperCase() ? 'BIG' : 'small';
+      const activeLetter = display.innerHTML;
+      display.innerHTML = isUpperCase() ? activeLetter.toUpperCase() : activeLetter.toLowerCase();
+    }
+
+    const enterFullScreen = () => {
+      if (main.requestFullscreen) {
+        main.requestFullscreen();
+      }
+    }
+
+    /*
+      TODO: I'd like to eventually swap this functionality out for one
+      that guarantees accessible color combinations
+    */
+    const randomColor = () => {
+      const letters = "0123456789ABCDEF"; 
+      
+      // html color code starts with # 
+      let color = '#'; 
+
+      // generating 6 times as HTML color code consist 
+      // of 6 letter or digits 
+      for (var i = 0; i < 6; i++) {
+         color += letters[(Math.floor(Math.random() * 16))]; 
+      }
+      return color;
+    }
+
+    const _setColors = () => {
+      const color1 = randomColor();
+      const color2 = randomColor();
+      main.style.background = color1;
+      main.style.color = color2;
+      fontBtn.style.color = color1;
+      caseBtn.style.color = color1;
+    }
+
+    const setColors = () => {
+      if (flashingColors){
+        setTimeout(_setColors, 50);
+        setTimeout(_setColors, 100);
+        setTimeout(_setColors, 150);
+        setTimeout(_setColors, 200);
+        
+      } else {
+        _setColors();
+      }
+    }
+
+    const toggleFlashing = () => {
+      flashingColors = !flashingColors;
+    }
+
+    const showOptions = () => {
+      display.innerHTML = `
+        <div class="modal">
+          <button class='btn' onClick="toggleFlashing()">
+            Toggle Flashing Colors
+          </button>
+        </div>
+      `
+    }
+    function speak (message) {
+      var msg = new SpeechSynthesisUtterance(message)
+      var voices = window.speechSynthesis.getVoices().filter(voice => {
+        return voice.lang === 'en-US' && voice.name !== 'Samantha';
+      })
+      msg.voice = voices[Math.floor(Math.random() * voices.length)]
+      window.speechSynthesis.speak(msg)
+    }
+
+    // Here's where the magic happens
+    const showKey = (e) => {
+      if (e.keyCode === 192) {
+        showOptions();
+      } else if (isAlphaNumeric(e.keyCode)) {
+        const key = isUpperCase() ? e.key.toUpperCase() : e.key.toLowerCase();
+        display.innerHTML = key;
+        speak(key);
+      }
+      setColors(10);
+    }
+    document.addEventListener('keydown', showKey);
+  </script>
 </body>
 </html>
