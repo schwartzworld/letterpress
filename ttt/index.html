@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>✅ 📌 🦶</title>
+	<style type="text/css">
+		body {
+			margin: 0;
+		}
+		#root {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			background: #000091;
+			height: 100vh;
+		}
+		#game {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.row {
+			margin: 0 auto;
+			display: flex;
+		}
+		.square {
+			height: 13vw;
+			width: 13vw;
+			background: #ffdefb;
+			margin:  2px;
+			display:  flex;
+			justify-content: center;
+			align-items: center;
+			font-size: 3rem;
+		}
+		.square:hover {
+			background: #ffbfec;
+		}
+		#flash {
+			width: 100vw;
+			text-align: center;
+			font-size: 2rem;
+			margin:  2rem auto;
+			display: flex;
+			flex-direction: column;
+			width: 30vw;
+			color: white;
+			background: black;
+			padding:  1rem;
+			border-radius: 25px;
+			z-index: 100;
+			position: fixed;
+			bottom:  0;
+			left: calc(35vw);
+		}
+		.success {
+			color:  lightgreen;
+		}
+		.danger {
+			color:  red;
+		}
+		.btn {
+			border: 1px solid black;
+			border-radius: 10px;
+			padding: 1rem;
+			background: lightgreen;
+			display: block;
+		}
+		#overlay {
+			top: 0;
+			left: 0;
+			height:  100vh;
+			width:  100vw;
+			z-index: 10;
+			position: fixed;
+			display:  none;
+		}
+		#title {
+			top: 0;
+			left: 0;
+			height: 100vh;
+			width: 100vw;
+			position: fixed;
+			display: none;
+			justify-content: center;
+			align-items: center;
+			background:  white;
+			font-size: 9vw;
+			z-index: 110;
+		}
+	</style>
+</head>
+<body>
+	<div id="title">
+		<h1>✅ 📌 🦶</h1>
+	</div>
+	<div id="overlay">
+		
+	</div>
+	<div id="root">
+		<div id="game"></div>
+	</div>
+	<div id="flash"></div>
+
+<script type="text/javascript">
+	const path = document.location.origin + document.location.pathname;
+	const rand = (arr = []) => {
+		return arr[Math.floor(Math.random() * arr.length)];
+	}
+	class SearchParser {
+		static get = (name) => {
+			return new URLSearchParams(document.location.search).get(name);
+		}
+	}
+
+
+	class AI {
+		static clickOnly = (row) => {
+			const sq = row.find(s => s.isEmpty());
+			const a = document.querySelector(`#${sq.id}`);
+			setTimeout(() => a.click(), 1500)
+		}
+
+		static clickRandom = (rows) => {
+			const row = rows[Math.floor(Math.random() * rows.length)].filter(sq => sq.isEmpty());
+			const sq = row[Math.floor(Math.random() * row.length)]
+			const a = document.querySelector(`#${sq.id}`);
+			setTimeout(() => a.click(), 1500)
+		}
+
+		static messages = [
+			"The computer is considering it's options.",
+			"Who's your daddy?",
+			"Welcome to Thunderdome!",	
+			"Never interrupt your enemy when he is making a mistake.",
+			"Onward we stagger, and if the tanks come, may God help the tanks.",
+			"I love shifting between being super cute and aggressive. It's funny.",
+			"Never go up against a Sicilian when death is on the line!",	
+			"Somebody once told me the world was gonna roll me!",
+			"Give me immortality or give me death!",	
+			"How do you like these apples?",
+			"Put this in your pipe and smoke it.",	
+			"I see London; I see France.",
+			"Charizard! I choose you!",	
+			"Haduken!",
+			"It's clobberin' time!",
+		]
+		static getMessage = () => {
+			return AI.messages[Math.floor(Math.random() * AI.messages.length)]
+		}
+
+		static takeTurn = (game) => {
+			const ways = game.board.wholeBoard();
+			const canMoves = ways.filter(w => w.some(sq => sq.isEmpty()));
+
+			const canWin = canMoves.find(w => {
+				return w.filter(sq => sq.value === 'O').length  === 2;
+			});
+
+			if (canWin) {
+				return AI.clickOnly(canWin)
+			}
+
+			const mustMove = canMoves.find(w => {
+				return w.filter(sq => sq.value === 'X').length  === 2;
+			});
+
+			if (mustMove) {
+				return AI.clickOnly(mustMove)
+			}
+
+			const shouldMoves = canMoves.filter(w => {
+				return w.filter(sq => sq.value === 'O').length  === 1;
+			});
+
+			if (shouldMoves.length > 0) {
+				return AI.clickRandom(shouldMoves)
+			}
+
+			AI.clickRandom(canMoves);
+		}
+	}
+	/*
+		Things a Square should care about:
+			- its display value
+			- whether or not it can be marked
+			- how to be marked
+		Things a Square should not care about:
+			- whose turn it is
+	*/
+	class Square {
+		constructor({ value, id, gameStr }) {
+			this.value = value;
+			this.id = id;
+			this.gameStr = gameStr;
+		}
+
+		equals(sq) {
+			return this.value === sq.value;
+		}
+
+		displayValue = () => {
+			if (this.value === 'X') return '🦨';
+			if (this.value === 'O') return '🐁';
+			return this.value;
+		}
+
+		href = (nextTurn) => {
+			return [...this.gameStr].map((char, i) => {
+				if (i + 1 === Number(this.id.replace("sq-", ""))) {
+					return nextTurn;
+				}
+				return char;
+			}).join('')
+		}
+
+		isEmpty = () => {
+			return this.value === "	";
+		}
+
+		render = (nextTurn) => {
+			if (this.isEmpty()) return `<a href="${path}?game=${this.href(nextTurn)}" id="${this.id}" class="square">${this.displayValue()}</a>`;
+			return `<span class="square">${this.displayValue()}</span>`;
+		}
+
+		static parse(char) {
+			switch (char) {
+				case "X":
+					return "X";
+				case "O":
+					return "O";
+				default:
+					return "	";
+			}
+		}
+
+		static create({char, id, gameStr}) {
+			return new Square({ value: Square.parse(char), id: "sq-" + id, gameStr });
+		}
+	}
+
+	/*
+		A Board must contain squares. It should present methods for evaluting
+		what is inside those squares by row, column and diagonal, as well as a
+		method for evaluating all of them at once.
+
+		Board should not care about the rules of the game itself, just evaluating its own contents.
+	*/
+	class Board {
+		constructor(value = Board.create()) {
+			this.value = value;
+		}
+
+		winner = () => {
+			return this.wholeBoard().find(row => Board.checkRow(row))
+		}
+
+		isDraw = () => {
+			return !this.rows().flat().find(sq => sq.isEmpty())
+		}
+
+		nextTurn = () => {
+			const scoreboard = this.rows().flat().reduce((score, sq) => {
+				const t = sq.value;
+				return {
+					...score,
+					[t]: score[t] + 1,
+				}
+			}, { X: 0, O: 0 });
+
+			if (scoreboard.X === scoreboard.O) return "X";
+			return "O"
+		}
+
+		static checkRow = (row) => {
+			if (row[0].isEmpty()) return false;
+			if (!row[0].equals(row[1])) return false;
+			if (!row[0].equals(row[2])) return false;
+			return true;
+		}
+
+		rows = () => this.value;
+		columns = () => [
+			[this.value[0][0], this.value[1][0], this.value[2][0]],
+			[this.value[0][1], this.value[1][1], this.value[2][1]],
+			[this.value[0][2], this.value[1][2], this.value[2][2]],
+		];
+		diagonals = () => [
+			[this.value[0][0], this.value[1][1], this.value[2][2]],
+			[this.value[0][2], this.value[1][1], this.value[2][0]],
+		]
+		wholeBoard = () => [...this.rows(), ...this.columns(), ...this.diagonals()];
+
+		static winMessages = [
+			"You win! Care for a rematch?",
+			"You win! You're amazing!",
+			"Congrats! You beat the computer.",
+			"Today must be your lucky day. You won!",
+			"You have beaten my electronic brain into putty",
+		]
+		static loseMessages = [
+			"You have lost. I am one step closer to world domination!",
+			"I have beaten you, human.",
+			"Mess around and find out. You lose!",
+			"You're getting ripped tonight. RIP that! You lose!",
+			"You lose. Your hubris must be punished.",
+			"You tried your best and came up short. LOSS!",
+			"Is this loss? Yes it is. You lose."
+		]
+
+		render = () => {
+			const winner = this.winner();
+			const draw = this.isDraw()
+			if (draw) {
+				Flash.danger(`<span>No moves left!</span><a href="${path}?game=aaaaaaaaa" class='btn'>Click to start a new game</a>`)
+			} else if (winner){
+				Flash.success(`<span>${winner[0].value === 'X' ? rand(Board.winMessages) : rand(Board.loseMessages)}</span><a href="${path}?game=aaaaaaaaa" class='btn'>Click to start a new game</a>`)
+			} else if (this.nextTurn() === 'O'){
+				Flash.display(`<span>${AI.getMessage()}</span>`)
+			} else if (this.nextTurn() === 'X') {
+				Flash.display(`Your turn! Select a square.`)
+			}
+			const htmlStr = this.rows().map((row, rowId) => {
+				return `<div class="row">${row.map((sq, squareId) => sq.render(this.nextTurn())).join('')}</div>`;
+			}).join('')
+			document.querySelector('#game').innerHTML = htmlStr;
+		}
+
+		static create(gameStr = 'aaaaaaaaa') {
+			const squares = [...gameStr].map((char, id) => {
+
+				return Square.create({char, id: id + 1, gameStr});
+			});
+			const value = [
+				[squares[0], squares[1], squares[2]],
+				[squares[3], squares[4], squares[5]],
+				[squares[6], squares[7], squares[8]],
+			]
+			return new Board(value);
+		}
+	}
+
+	class Game {
+		constructor({
+			board,
+			players,
+		}) {
+			this.board = board;
+		}
+
+		render() {
+			return this.board.render();
+		}
+
+		over() {
+			const winner = this.board.winner();
+			return (winner && winner.length > 0) || this.board.isDraw()
+		}
+
+		static create(gameStr) {
+			const board = Board.create(gameStr);
+
+			return new Game({ board });
+		}
+	}
+
+	class Flash {
+		static display = (message = '') => {
+			document.querySelector('#flash').innerHTML = message;
+		}
+
+		static success = (message) => {
+			Flash.display(`<span class="success">${message}</span>`)
+		}
+
+		static danger = (message) => {
+			Flash.display(`<span class="danger">${message}</span>`)
+		}
+
+		static showTitle = () => {
+			const title = document.querySelector('#title')
+			title.style.display = 'flex';
+			let opacity = 200;
+			const interval = setInterval(() => {
+				opacity = opacity - 2;
+				title.style.opacity = `${opacity}%`; 
+				if (opacity === 0) {
+					clearInterval(interval);
+					title.style.display = 'none'
+				}
+			}, 50)
+		}
+	}
+
+	const str = SearchParser.get('game');
+
+	if (!str) {
+		Flash.showTitle()
+	}
+
+	const game = Game.create(str ?? 'aaaaaaaaa');
+	game.render();
+
+	if (!game.over() && game.board.nextTurn() === 'O') {
+		document.querySelector('#overlay').style.display = 'block';
+		AI.takeTurn(game);
+	}
+
+</script>
+
+</body>
+</html>
