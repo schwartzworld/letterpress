@@ -82,7 +82,10 @@
     .hidden {
       display: none;
     }
-
+    canvas {
+      background:  lightgray;
+      height: 100%;
+    }
     footer {
       background: white;
       font-size: 50%;
@@ -94,7 +97,7 @@
 
 <body>
   <div id='wrapper'>
-    <div id='game'></div>
+    <canvas width="150" height="300"></canvas>
   </div>
   <section id='controls'>
     <button class='dead' onclick='start()'>start</button>
@@ -105,212 +108,283 @@
     </footer>
   </section>
   <script>
-    /*
-    Any live cell with two or three live neighbors survives.
-    Any dead cell with three live neighbors becomes a live cell.
-    All other live cells die in the next generation. Similarly, all other dead cells stay dead.
-    */
-
-    // event listener for showing / hiding controls
-    document.body.onkeyup = function(e){
-      if(e.keyCode == 32){
-        toggleControls();
-      }
-    }
 
     const game = document.querySelector('#game');
     const controls = document.querySelector('#controls');
 
-    const toggleControls = () => {
-      if (controls.className === 'hidden') {
-        controls.className = '';
-      } else {
-        controls.className = 'hidden';
+    const Canvas = () => {
+      const canvas = document.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      const drawSquare = (color, { x, y, size }) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, size, size);
+      }
+      return {
+        drawSquare,
       }
     }
-    class Cell {
-      constructor(row, col, alive = false) {
-        this.id = `${row},${col}`;
-        this.row = row;
-        this.col = col;
-        this.alive = alive;
+
+    const c = Canvas();
+
+    class Square {
+      constructor({rowId, squareId, filled = false}) {
+        this.rowId = rowId;
+        this.squareId = squareId;
+        this.filled = filled;
       }
 
-      toggle = () => {
-        this.alive = !this.alive;
+      static size = 10;
+
+      draw(inActivePiece) {
+        const x = (Square.size + 2) * this.squareId;
+        const y = (Square.size + 2) * (this.rowId - 5.9);
+
+        const r = 255 - ((this.squareId + this.rowId) * 8);
+        const color =  this.filled ? 'green' : inActivePiece ? 'black' : `rgb(${255 - r} ${r} 255)`
+        c.drawSquare(color, {
+          x,
+          y,
+          size: Square.size,
+        })
       }
 
-      neighbors = () => {
-        return gameBoard ? gameBoard.getNeighbors(this.row, this.col) : [];
+      get canMoveLeft() {
+        return this.squareId > 0;
+      }
+      get canMoveRight() {
+        return this.squareId <= Board.width - 2;
       }
 
-      nextState = () => {
-        return this;
+      is(square) {
+        return square.rowId === this.rowId && square.squareId === this.squareId;
       }
 
-      toRepresentation = (activePiece) => {
-        const isActive = activePiece.shapeIDs().find(cell => cell === this.id);
-        return `<div class='cell' style="${isActive ? 'background: red;' : ''}"></div>`
+      down = () => {
+        return new Square({
+          rowId: this.rowId + 1,
+          squareId: this.squareId,
+        })
+      }
+
+      left = () => {
+        return new Square({
+          rowId: this.rowId,
+          squareId: this.squareId - 1,
+        })
+      }
+      right = () => {
+        return new Square({
+          rowId: this.rowId,
+          squareId: this.squareId + 1,
+        })
+      }
+
+      static create(rowId, squareId) {
+        return new Square({rowId, squareId})
       }
     }
 
     class Row {
-      constructor(length, rid, cells) {
-        this.length = length;
-        this.id = rid;
-        if (cells) {
-          this.cells = cells;
-        } else {
-          const blankCells = new Array(length).fill(null).map((cell, cid) => new Cell(Number(rid), Number(cid)));
-          this.cells = new Map();
-          blankCells.forEach((cell, cid) => {
-            this.cells.set(cid, cell);
-          });
-        }
+      constructor({ squares }) {
+        this.squares = squares;
       }
-
-      toRepresentation = (activePiece) => {
-        const cells = [...this.cells.values()].map(cell => cell.toRepresentation(activePiece)).join('');
-        return `<div class='row'>${cells}</div>`
-      }
-
-      nextState = () => {
-        const next = new Map();
-        this.cells.forEach((cell, cid) => {
-          next.set(cid, cell.nextState())
-        });
-        return new Row(this.length, this.id, next);
+      static create = (rowId) => {
+        const squares = new Array(Board.width).fill(0).map((__, squareId) => {
+          return Square.create(rowId, squareId);
+        })
+        return new Row({ squares });
       }
     }
 
     class Piece {
-      constructor(props = {}) {
-        const { x = 0, y = 0, form = 'L'} = props;
-        this.x = x;
-        this.y = y;
-        this.form = form;
-        this.position = 0;
-        console.log(this)
+      constructor({squares}) {
+        this.squares = squares;
       }
-      shape = () => {
-        const {x , y} = this;
-        const shapes = { L: [ [{x, y}, {x: x + 1, y }, {x, y: y + 1}, {x, y: y + 2}]] }
-        return shapes[this.form][this.position];
+      next = () => {
+        return new Piece({
+          squares: this.squares.map(sq => sq.down())
+        })
       }
-      shapeIDs = () => this.shape().map(cell => `${cell.x},${cell.y}`);
-      isIn = (cell) => {
-        return this.shapeIDs.includes(cell.id)
+      moveLeft = () => {
+        if (this.squares.some(sq => sq.squareId <= 0)) return this;
+        return new Piece({
+          squares: this.squares.map(sq => sq.left())
+        });
+      }
+      moveRight = () => {
+        if (this.squares.some(sq => sq.squareId >= 9)) return this;
+        return new Piece({
+          squares: this.squares.map(sq => sq.right())
+        });
+      }
+      has(sq) {
+        return this.squares.some(s => s.is(sq));
       }
     }
 
   	class Board {
-  		constructor(rows) {
-        if (rows) {
-          this.rows = rows;
-        } else {
-          const   height = 20,
-                  width = 10,
-                  rows = new Array(height).fill(null).map((row, rid) => new Row(width, Number(rid))),
-                  r = new Map();
-          rows.forEach((row, rid) => r.set(rid, row));
-          this.rows = r;
-
-          this.activePiece = new Piece();
-        } 
-        this.draw();
-  		}
-
-      toggle = (x, y) => {
-        const row = this.rows.get(x);
-        const cell = row.cells.get(y);
-        cell.toggle();
-        this.draw();
+  		constructor({ rows, piece }) {
+        this.rows = rows;
+        this.piece = piece;
+        this.render()
       }
 
-  		draw = () => {
-        const board = [...this.rows.values()].map(row => row.toRepresentation(this.activePiece)).join('');
-        game.innerHTML = board;
-      }
-
-      nextState = () => {
-        const next = new Map();
-        this.rows.forEach((row, rid) => {
-          next.set(rid, row.nextState())
+      findSquarePair = (sq) => {
+        return this.squares.find(s => {
+          return s.rowId === sq.rowId && s.squareId === sq.squareId
         });
-        return new Board(next);
       }
 
-      getCell = (([r, c]) => {
-        const row = this.rows.get(r);
-        if (!row) return {};
-        const col = row.cells.get(c);
-        return col || {};
-      })
+      get squares () {
+        const visibleRows = this.rows.slice(Math.max(this.rows.length - 21, 1))
+        return visibleRows.map(r => r.squares).flat()
+      }
 
-      getNeighbors = (cells) => {
-        return cells.map(cell => {
-          const row = Number(cell.row);
-          const col = Number(cell.cell);
+      shouldMergePiece = () => {
+        if (this.piece.squares.some(sq => sq.rowId === this.rows.length - 1)) {
+          return true;
+        }
+        if (this.piece.squares.some(sq => {
+          const pair = this.findSquarePair(sq.down());
+          return pair?.filled;
+        })) return true;
 
-          const prevRow = row - 1;
-          const nextRow = row + 1;
-          const prevCol = col - 1;
-          const nextCol = col + 1;
-          return {
-            prevRow, row, nextRow, prevCol, col, nextCol
-          }
+        return false;
+      }
+
+      mergePiece = () => {
+        const rows = this.rows.map(r => {
+          const squares = r.squares.map(sq => {
+            return new Square({
+              ...sq,
+              filled: sq.filled || this.piece.has(sq),
+            })
+          })
+          return new Row({
+            ...r,
+            squares,
+          })
+        })
+        return new Board({
+          rows,
+          piece: new Piece({
+            squares: [
+              Square.create(4, 1),
+              Square.create(4, 2),
+              Square.create(4, 3),
+              Square.create(3, 2),
+            ]
+          })
         })
       }
 
+      moveDown = () => {
+        if (this.shouldMergePiece()) {
+          return this.mergePiece();
+        } else {
+          return new Board({
+            ...this,
+            piece: this.piece.next()
+          })
+        }
+      }
+
+      render() {
+        this.squares.forEach(sq => {
+          const filled = this.piece.squares.some(s => s.is(sq));
+          sq.draw(filled)
+        })
+      }
+
+      doesNotIntersect = (square) => {
+        return !this.squares.some(sq => sq.is(square));
+      }
+
+      canMoveLeft = () => {
+        const next = this.piece.moveLeft();
+        if (next.squares.some(sq => {
+          const pair = this.findSquarePair(sq);
+          return pair?.filled;
+        })) return false;
+
+        if (this.doesNotIntersect(next)) return next;
+
+        return null;
+      }
+
+      canMoveRight = () => {
+        const next = this.piece.moveRight();
+        if (next.squares.some(sq => {
+          const pair = this.findSquarePair(sq);
+          return pair?.filled;
+        })) return false;
+
+        if (this.doesNotIntersect(next)) return next;
+
+        return null;
+      }
+
+      moveLeft = () => {
+        if (this.canMoveLeft()) {
+          return new Board({
+            ...this,
+            piece: this.piece.moveLeft(),
+          })
+        }
+        return this;
+      }
+      moveRight = () => {
+        if (this.canMoveRight()) {
+          return new Board({
+            ...this,
+            piece: this.piece.moveRight(),
+          })
+        }
+        return this;
+      }
+
+      static height = 27;
+      static width = 10;
+
       static create = () => {
-        return new Board();
+        const rows = new Array(Board.height).fill(0).map((_, rowId) => {
+          return Row.create(rowId)
+        });
+        const piece = new Piece({
+          squares: [
+            Square.create(4, 1),
+            Square.create(4, 2),
+            Square.create(4, 3),
+            Square.create(3, 2),
+          ]
+        })
+        return new Board({ rows, piece });
       }
   	}
 
-    let gameBoard;
-
-    let liff;
-
-    let speed = 500;
-    let steps = 0;
-
-    const faster = () => {
-      speed -= (speed * 0.2);
-    }
-
-    const slower = () => {
-      speed += (speed * 0.2);
-    }
-
-    const [startButton, stopButton, fasterButton, slowerButton, resetButton, stepButton] = document.querySelectorAll('button');
-
-    const start = () => {
-      stop();
-      liff = setInterval(step, speed);
-    }
-
-    const stop = () => {
-      clearInterval(liff);
-      gameBoard.draw();
-    }
-
-    const step = () => {
-      const { activePiece } = gameBoard
-
-      try {
-        steps += 1;
-        gameBoard.draw();
-      } catch (e) {
-        console.error({e})
-        clearInterval(game);
+    let board = Board.create();
+    // event listener for showing / hiding controls
+    document.body.onkeydown = function(e){
+      console.log(e.keycode)
+      switch (e.keyCode) {
+        case 37: // left
+          board = board.moveLeft();
+          return;
+        case 39: // right
+          board = board.moveRight();
+          return;
+        case 40: // down
+          board = board.moveDown();
+        case 38: // up
+        default:
+          return;
       }
     }
 
   	const play = () => {
-      steps = 0;
-      gameBoard = Board.create();
-      gameBoard.draw();
-      start();
+      setInterval(() => {
+        board = board.moveDown()
+      }, 400)
   	}
 
     play();

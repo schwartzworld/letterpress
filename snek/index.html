@@ -259,10 +259,19 @@
 		    39: 'right',
     		40: 'down',
     	};
-    	const dir = e.keyCode;
-    	if (!directions[dir]) {
+      const opposites = {
+        37: 'right',
+        38: 'down',
+        39: 'left',
+        40: 'up'
+      }
+    	const dir = directions[e.keyCode];
+      const opposite = opposites[e.keyCode]
+    	if (!dir) {
     		console.error(`${directions[dir]} is not a valid direction`);
-    	} else {
+    	} else if (dir === opposite) {
+        beep(10, e.keyCode * 6, 70);
+      } else {
     		snakeDirection = directions[dir];
     	}
     });
