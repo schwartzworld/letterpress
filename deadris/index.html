@@ -108,7 +108,9 @@
     </footer>
   </section>
   <script>
-
+    function random(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
     const game = document.querySelector('#game');
     const controls = document.querySelector('#controls');
 
@@ -178,6 +180,12 @@
           squareId: this.squareId + 1,
         })
       }
+      up = () => {
+        return new Square({
+          rowId: this.rowId - 1,
+          squareId: this.squareId,
+        })
+      }
 
       static create(rowId, squareId) {
         return new Square({rowId, squareId})
@@ -200,6 +208,11 @@
       constructor({squares}) {
         this.squares = squares;
       }
+
+      static random = () => {
+        const t = random([TTetromino, ITetromino, OTetromino, LTetromino, RTetromino])
+        return random(t.arrangements)(Square.create(4, 1))
+      } 
       next = () => {
         return new Piece({
           squares: this.squares.map(sq => sq.down())
@@ -222,10 +235,202 @@
       }
     }
 
+
+    class RTetromino extends Piece {
+      static rightway = (startingSquare) => {
+        return new RTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.up(),
+            startingSquare.down(),
+            startingSquare.up().right(),
+          ]
+        })
+      }
+
+      static downway = (startingSquare) => {
+        return new RTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.left(),
+            startingSquare.right().down(),
+            startingSquare.right(),
+          ]
+        })
+      }
+
+      static leftway = (startingSquare) => {
+        return new RTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.up(),
+            startingSquare.down().left(),
+            startingSquare.down(),
+          ]
+        })
+      }
+
+      static upway = (startingSquare) => {
+        return new RTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.left(),
+            startingSquare.right(),
+            startingSquare.left().up(),
+          ]
+        })
+      }
+
+      static arrangements = [RTetromino.upway, RTetromino.downway, RTetromino.leftway, RTetromino.rightway]
+    }
+
+    class LTetromino extends Piece {
+      static rightway = (startingSquare) => {
+        return new LTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.up(),
+            startingSquare.down(),
+            startingSquare.down().right(),
+          ]
+        })
+      }
+
+      static downway = (startingSquare) => {
+        return new LTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.left(),
+            startingSquare.left().down(),
+            startingSquare.right(),
+          ]
+        })
+      }
+
+      static leftway = (startingSquare) => {
+        return new LTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.up(),
+            startingSquare.up().left(),
+            startingSquare.down(),
+          ]
+        })
+      }
+
+      static upway = (startingSquare) => {
+        return new LTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.left(),
+            startingSquare.right(),
+            startingSquare.right().up(),
+          ]
+        })
+      }
+
+      static arrangements = [LTetromino.upway, LTetromino.downway, LTetromino.leftway, LTetromino.rightway]
+    }
+
+    class OTetromino extends Piece {
+      static onlyway = (startingSquare) => {
+        return new OTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.right(),
+            startingSquare.down(),
+            startingSquare.right().down(),
+          ]
+        })
+      }
+
+      static arrangements = [OTetromino.onlyway]
+    }
+
+    class ITetromino extends Piece {
+      static upway = (startingSquare) => {
+        return new ITetromino({
+          squares: [
+            startingSquare,
+            startingSquare.up(),
+            startingSquare.down(),
+            startingSquare.down().down(),
+          ]
+        })
+      }
+
+      static sideway = (startingSquare) => {
+        return new ITetromino({
+          squares: [
+            startingSquare,
+            startingSquare.left(),
+            startingSquare.right(),
+            startingSquare.right().right(),
+          ]
+        })
+      }
+      static arrangements = [ITetromino.upway, ITetromino.sideway]
+    }
+
+    class TTetromino extends Piece {
+      static upway = (startingSquare) => {
+        return new TTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.left(),
+            startingSquare.up(),
+            startingSquare.right(),
+          ]
+        })
+      }
+
+      static rightway = (startingSquare) => {
+        const right = startingSquare.right();
+        return new TTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.up(),
+            startingSquare.right(),
+            startingSquare.down(),
+          ]
+        })
+      }
+
+      static leftway = (startingSquare) => {
+        const right = startingSquare.right();
+        return new TTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.up(),
+            startingSquare.left(),
+            startingSquare.down(),
+          ]
+        })
+      }
+      static downway = (startingSquare) => {
+        const right = startingSquare.right();
+        return new TTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.right(),
+            startingSquare.left(),
+            startingSquare.down(),
+          ]
+        })
+      }
+      static arrangements = [
+        TTetromino.upway,
+        TTetromino.downway,
+        TTetromino.leftway,
+        TTetromino.rightway,
+      ]
+    }
+
   	class Board {
-  		constructor({ rows, piece }) {
+  		constructor({ rows, piece, onDeck }) {
         this.rows = rows;
         this.piece = piece;
+        this.onDeck = onDeck;
         this.render()
       }
 
@@ -266,15 +471,10 @@
           })
         })
         return new Board({
+          ...this,
           rows,
-          piece: new Piece({
-            squares: [
-              Square.create(4, 1),
-              Square.create(4, 2),
-              Square.create(4, 3),
-              Square.create(3, 2),
-            ]
-          })
+          piece: this.onDeck,
+          onDeck: Piece.random()
         })
       }
 
@@ -342,6 +542,13 @@
         }
         return this;
       }
+      rotateLeft = () => {
+
+      }
+
+      rotateRight = () => {
+
+      }
 
       static height = 27;
       static width = 10;
@@ -350,15 +557,9 @@
         const rows = new Array(Board.height).fill(0).map((_, rowId) => {
           return Row.create(rowId)
         });
-        const piece = new Piece({
-          squares: [
-            Square.create(4, 1),
-            Square.create(4, 2),
-            Square.create(4, 3),
-            Square.create(3, 2),
-          ]
-        })
-        return new Board({ rows, piece });
+        const piece = Piece.random();
+        const onDeck = Piece.random()
+        return new Board({ rows, piece, onDeck });
       }
   	}
 
