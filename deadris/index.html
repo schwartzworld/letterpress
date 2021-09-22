@@ -9,10 +9,16 @@
   <style type="text/css">
     body {
       font-family: 'Courier New';
+      background: black;
+      color:  white;
       font-size: 15px;
       overflow: hidden;
       height: 100vh;
       width: 100vw;
+    }
+
+    a {
+      color:  pink;
     }
 
     button {
@@ -83,11 +89,12 @@
       display: none;
     }
     canvas {
-      background:  lightgray;
+      background: black;
       height: 100%;
     }
     footer {
-      background: white;
+      background: black;
+      color: white;
       font-size: 50%;
       display: inline-block;
       text-align: center;
@@ -97,11 +104,9 @@
 
 <body>
   <div id='wrapper'>
-    <canvas width="150" height="300"></canvas>
+    <canvas width="190" height="300"></canvas>
   </div>
   <section id='controls'>
-    <button class='dead' onclick='start()'>start</button>
-    <button class='alive' onclick='stop()'>stop</button>
     <footer>
       Copyright © 2020 <a href="https://schwartz.world">Ian Schwartz</a><br />
       <a href='/'>HOME</a>
@@ -115,14 +120,31 @@
     const controls = document.querySelector('#controls');
 
     const Canvas = () => {
+      interval = 0;
+      const getInterval = () => interval % 255;
+      const increment = () => interval += 10;
       const canvas = document.querySelector('canvas');
       const ctx = canvas.getContext('2d');
+
+      const clear = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       const drawSquare = (color, { x, y, size }) => {
         ctx.fillStyle = color;
         ctx.fillRect(x, y, size, size);
       }
+
+      const write = (text, color, x, y) => {
+        ctx.fillStyle = color;
+        ctx.fillText(text, x, y)
+      }
+
+      const color = () => `rgb(${100} ${200} ${getInterval()}`
       return {
         drawSquare,
+        increment,
+        color,
+        clear,
+        write
       }
     }
 
@@ -138,11 +160,11 @@
       static size = 10;
 
       draw(inActivePiece) {
-        const x = (Square.size + 2) * this.squareId;
-        const y = (Square.size + 2) * (this.rowId - 5.9);
+        const x = ((Square.size + 2) * this.squareId) + 10;
+        const y = ((Square.size + 2) * (this.rowId - 5.9)) + 10;
 
         const r = 255 - ((this.squareId + this.rowId) * 8);
-        const color =  this.filled ? 'green' : inActivePiece ? 'black' : `rgb(${255 - r} ${r} 255)`
+        const color =  this.filled ? 'black' : inActivePiece ? 'darkred' : c.color()
         c.drawSquare(color, {
           x,
           y,
@@ -205,13 +227,14 @@
     }
 
     class Piece {
-      constructor({squares}) {
+      constructor({squares, shape}) {
         this.squares = squares;
+        this.shape = shape;
       }
 
       static random = () => {
-        const t = random([TTetromino, ITetromino, OTetromino, LTetromino, RTetromino])
-        return random(t.arrangements)(Square.create(4, 1))
+        const t = random([TTetromino, ITetromino, OTetromino, LTetromino, RTetromino, STetromino, ZTetromino])
+        return random(t.arrangements)(Square.create(2, 4))
       } 
       next = () => {
         return new Piece({
@@ -235,7 +258,6 @@
       }
     }
 
-
     class RTetromino extends Piece {
       static rightway = (startingSquare) => {
         return new RTetromino({
@@ -244,7 +266,8 @@
             startingSquare.up(),
             startingSquare.down(),
             startingSquare.up().right(),
-          ]
+          ],
+          shape: RTetromino.rightway
         })
       }
 
@@ -255,7 +278,8 @@
             startingSquare.left(),
             startingSquare.right().down(),
             startingSquare.right(),
-          ]
+          ],
+          shape: RTetromino.downway
         })
       }
 
@@ -266,7 +290,8 @@
             startingSquare.up(),
             startingSquare.down().left(),
             startingSquare.down(),
-          ]
+          ],
+          shape: RTetromino.leftway
         })
       }
 
@@ -277,7 +302,8 @@
             startingSquare.left(),
             startingSquare.right(),
             startingSquare.left().up(),
-          ]
+          ],
+          shape: RTetromino.upway
         })
       }
 
@@ -292,7 +318,8 @@
             startingSquare.up(),
             startingSquare.down(),
             startingSquare.down().right(),
-          ]
+          ],
+          shape: LTetromino.rightway
         })
       }
 
@@ -303,7 +330,8 @@
             startingSquare.left(),
             startingSquare.left().down(),
             startingSquare.right(),
-          ]
+          ],
+          shape: LTetromino.downway
         })
       }
 
@@ -314,7 +342,8 @@
             startingSquare.up(),
             startingSquare.up().left(),
             startingSquare.down(),
-          ]
+          ],
+          shape: LTetromino.leftway
         })
       }
 
@@ -325,7 +354,8 @@
             startingSquare.left(),
             startingSquare.right(),
             startingSquare.right().up(),
-          ]
+          ],
+          shape: LTetromino.upway
         })
       }
 
@@ -340,11 +370,67 @@
             startingSquare.right(),
             startingSquare.down(),
             startingSquare.right().down(),
-          ]
+          ],
+          shape: OTetromino.onlyway
         })
       }
 
       static arrangements = [OTetromino.onlyway]
+    }
+
+    class STetromino extends Piece {
+      static upway = (startingSquare) => {
+        return new OTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.up(),
+            startingSquare.right(),
+            startingSquare.right().down()
+          ],
+          shape: STetromino.upway
+        })
+      }
+      static sideway = (startingSquare) => {
+        return new OTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.right(),
+            startingSquare.down(),
+            startingSquare.down().left()
+          ],
+          shape: STetromino.sideway
+        })
+      }
+
+      static arrangements = [STetromino.upway, STetromino.sideway]
+    }
+
+
+    class ZTetromino extends Piece {
+      static upway = (startingSquare) => {
+        return new OTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.up(),
+            startingSquare.left(),
+            startingSquare.left().down()
+          ],
+          shape: ZTetromino.upway
+        })
+      }
+      static sideway = (startingSquare) => {
+        return new OTetromino({
+          squares: [
+            startingSquare,
+            startingSquare.left(),
+            startingSquare.down(),
+            startingSquare.down().right()
+          ],
+          shape: ZTetromino.sideway
+        })
+      }
+
+      static arrangements = [ZTetromino.upway, ZTetromino.sideway]
     }
 
     class ITetromino extends Piece {
@@ -355,7 +441,8 @@
             startingSquare.up(),
             startingSquare.down(),
             startingSquare.down().down(),
-          ]
+          ],
+          shape: ITetromino.upway
         })
       }
 
@@ -366,7 +453,8 @@
             startingSquare.left(),
             startingSquare.right(),
             startingSquare.right().right(),
-          ]
+          ],
+          shape: ITetromino.sideway
         })
       }
       static arrangements = [ITetromino.upway, ITetromino.sideway]
@@ -380,7 +468,8 @@
             startingSquare.left(),
             startingSquare.up(),
             startingSquare.right(),
-          ]
+          ],
+          shape: TTetromino.upway
         })
       }
 
@@ -392,7 +481,8 @@
             startingSquare.up(),
             startingSquare.right(),
             startingSquare.down(),
-          ]
+          ],
+          shape: TTetromino.rightway
         })
       }
 
@@ -404,7 +494,8 @@
             startingSquare.up(),
             startingSquare.left(),
             startingSquare.down(),
-          ]
+          ],
+          shape: TTetromino.leftway
         })
       }
       static downway = (startingSquare) => {
@@ -415,7 +506,8 @@
             startingSquare.right(),
             startingSquare.left(),
             startingSquare.down(),
-          ]
+          ],
+          shape: TTetromino.downway
         })
       }
       static arrangements = [
@@ -489,11 +581,18 @@
         }
       }
 
+      renderOnDeck() {
+        c.write('on deck', 'yellow', 140, 40)
+        this.onDeck.shape(Square.create(10,12)).squares.forEach(s => s.draw(true))
+      }
+
       render() {
+        c.clear();
         this.squares.forEach(sq => {
           const filled = this.piece.squares.some(s => s.is(sq));
           sq.draw(filled)
-        })
+        });
+        this.renderOnDeck();
       }
 
       doesNotIntersect = (square) => {
@@ -584,7 +683,8 @@
 
   	const play = () => {
       setInterval(() => {
-        board = board.moveDown()
+        board = board.moveDown();
+        c.increment()
       }, 400)
   	}
 
