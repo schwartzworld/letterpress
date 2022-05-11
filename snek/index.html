@@ -28,7 +28,7 @@
     }
     #wrapper::after {
       content: "snek";
-      background-image: url("grass.jpeg");
+      background-image: url("butterfly.webp");
       top: 0;
       left: 0;
       bottom: 0;
@@ -228,8 +228,11 @@
             speedUp()
           };
 
-          if (steps % 10 === 0) board.spawnApple(height, width);
-
+          if (steps % 7 === 0) {
+            board.spawnApple(height, width);
+            board.spawnApple(height, width);
+            board.spawnApple(height, width);
+          }
           snake.move(snakeDirection);
           board.draw(snake);
         } catch (e) {
@@ -272,7 +275,7 @@
     	} else if (dir === opposite) {
         beep(10, e.keyCode * 6, 70);
       } else {
-    		snakeDirection = directions[dir];
+    		snakeDirection = dir;
     	}
     });
 
